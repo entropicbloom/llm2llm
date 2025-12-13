@@ -1,0 +1,1 @@
+- add titles to each conversation, making it nicer to show on dashboard

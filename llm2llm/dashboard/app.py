@@ -1,15 +1,27 @@
 """Main Streamlit dashboard app."""
 
-import streamlit as st
+import sys
 from pathlib import Path
 
-from .data import (
+# Add parent directories to path for Streamlit direct execution
+_this_file = Path(__file__).resolve()
+_dashboard_dir = _this_file.parent
+_llm2llm_dir = _dashboard_dir.parent
+_project_dir = _llm2llm_dir.parent
+
+if str(_project_dir) not in sys.path:
+    sys.path.insert(0, str(_project_dir))
+
+import streamlit as st
+
+from llm2llm.dashboard.data import (
     load_all_analyses,
     get_models_by_provider,
     aggregate_model_stats,
+    aggregate_pair_stats,
 )
-from .components import render_provider_section
-from .styles import CUSTOM_CSS, PROVIDER_COLORS
+from llm2llm.dashboard.components import render_models_grid, render_conversation_browser, render_pair_rankings
+from llm2llm.dashboard.styles import CUSTOM_CSS
 
 
 def get_db_path() -> Path:
@@ -40,7 +52,7 @@ def run_dashboard() -> None:
     # Inject custom CSS
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-    st.title("🤖 LLM2LLM Analysis Dashboard")
+    st.title("LLM2LLM Analysis Dashboard")
     st.caption("Analyzing conversation patterns between AI models")
 
     # Load data
@@ -52,14 +64,44 @@ def run_dashboard() -> None:
         return
 
     try:
-        analyses = load_all_analyses(db_path)
+        all_analyses = load_all_analyses(db_path)
     except Exception as e:
         st.error(f"Error loading data: {e}")
         return
 
-    if not analyses:
+    if not all_analyses:
         st.warning("No analysis data found. Run `llm2llm analyze` to analyze completed conversations.")
         return
+
+    # Extract unique segments
+    segments = sorted(set(
+        (a["segment_start"], a["segment_end"])
+        for a in all_analyses
+    ))
+
+    # Segment selector in sidebar
+    st.sidebar.header("Analysis Settings")
+
+    def format_segment(seg: tuple) -> str:
+        start, end = seg
+        if end is None:
+            return f"Messages [{start}:] (last {-start})"
+        return f"Messages [{start}:{end}]"
+
+    segment_options = [format_segment(s) for s in segments]
+    selected_idx = st.sidebar.selectbox(
+        "Conversation Segment",
+        range(len(segments)),
+        format_func=lambda i: segment_options[i],
+        help="Which part of conversations to analyze"
+    )
+    selected_segment = segments[selected_idx]
+
+    # Filter analyses by selected segment
+    analyses = [
+        a for a in all_analyses
+        if (a["segment_start"], a["segment_end"]) == selected_segment
+    ]
 
     # Get models grouped by provider
     providers = get_models_by_provider(analyses)
@@ -88,24 +130,21 @@ def run_dashboard() -> None:
 
     st.markdown("---")
 
-    # Provider tabs
-    provider_list = list(providers.keys())
+    # Main view tabs: Models vs Rankings vs Conversations
+    main_tab1, main_tab2, main_tab3 = st.tabs(["Models", "Rankings", "Conversations"])
 
-    if len(provider_list) == 0:
-        st.warning("No data to display")
-        return
+    with main_tab1:
+        render_models_grid(all_stats, providers)
 
-    tabs = st.tabs([
-        f"{p} ({len(providers[p])} models)" for p in provider_list
-    ])
+    with main_tab2:
+        # Pair rankings
+        pair_stats = aggregate_pair_stats(analyses)
+        render_pair_rankings(pair_stats)
 
-    for tab, provider in zip(tabs, provider_list):
-        with tab:
-            render_provider_section(
-                provider,
-                providers[provider],
-                all_stats,
-            )
+    with main_tab3:
+        # Conversation browser
+        conversations_dir = db_path.parent.parent / "conversations"
+        render_conversation_browser(analyses, conversations_dir)
 
 
 # Allow running directly with streamlit

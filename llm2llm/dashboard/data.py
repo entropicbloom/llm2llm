@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 import sqlite3
 import json
+from typing import Optional
 
 
 def infer_provider(model_id: str) -> str:
@@ -26,6 +27,16 @@ def get_provider_display_name(model_id: str) -> str:
     if "/" in model_id:
         model_id = model_id.split("/", 1)[1]
     return model_id
+
+
+def load_conversation(conversations_dir: Path, conversation_id: str) -> Optional[dict]:
+    """Load a conversation's full content from JSON file."""
+    json_path = conversations_dir / f"{conversation_id}.json"
+    if not json_path.exists():
+        return None
+
+    with open(json_path) as f:
+        return json.load(f)
 
 
 def load_all_analyses(db_path: Path) -> list[dict]:
@@ -200,3 +211,74 @@ def aggregate_model_stats(analyses: list[dict], model_id: str) -> dict:
         "is_structured_rate": is_structured_rate,
         "partner_stats": partner_stats,
     }
+
+
+def aggregate_pair_stats(analyses: list[dict]) -> list[dict]:
+    """
+    Aggregate statistics for each unique model pair.
+    Returns a list of pair stats sorted by conversation count.
+    """
+    from collections import defaultdict
+
+    # Group by ordered pair (llm1, llm2)
+    pair_data: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for a in analyses:
+        pair = (a["llm1_model"], a["llm2_model"])
+        pair_data[pair].append(a)
+
+    results = []
+    for (llm1, llm2), convs in pair_data.items():
+        n = len(convs)
+
+        # Aggregate topic scores
+        topic_sums: dict[str, float] = defaultdict(float)
+        topic_counts: dict[str, int] = defaultdict(int)
+        for a in convs:
+            for topic, score in a.get("topics", {}).items():
+                topic_sums[topic] += score
+                topic_counts[topic] += 1
+
+        avg_topics = {
+            topic: topic_sums[topic] / topic_counts[topic]
+            for topic in topic_sums
+        }
+        avg_topics = dict(sorted(avg_topics.items(), key=lambda x: -x[1]))
+
+        # Aggregate mood dimensions
+        avg_warmth = sum(a.get("warmth", 0.0) for a in convs) / n
+        avg_energy = sum(a.get("energy", 0.0) for a in convs) / n
+        avg_depth = sum(a.get("depth", 0.0) for a in convs) / n
+        avg_tone_playful = sum(a.get("tone_playful", 0.5) for a in convs) / n
+
+        # Trajectory distribution
+        trajectory_counts: dict[str, int] = defaultdict(int)
+        for a in convs:
+            trajectory_counts[a.get("trajectory", "unknown")] += 1
+        dominant_trajectory = max(trajectory_counts.items(), key=lambda x: x[1])[0] if trajectory_counts else "unknown"
+
+        # Rates
+        ending_attempt_rate = sum(1 for a in convs if a.get("ending_attempt", False)) / n
+        is_lengthy_rate = sum(1 for a in convs if a.get("is_lengthy", False)) / n
+        is_structured_rate = sum(1 for a in convs if a.get("is_structured", False)) / n
+
+        # Average turn count
+        avg_turns = sum(a.get("turn_count", 0) for a in convs) / n
+
+        results.append({
+            "llm1": llm1,
+            "llm2": llm2,
+            "conversation_count": n,
+            "avg_topics": avg_topics,
+            "avg_warmth": avg_warmth,
+            "avg_energy": avg_energy,
+            "avg_depth": avg_depth,
+            "avg_tone_playful": avg_tone_playful,
+            "dominant_trajectory": dominant_trajectory,
+            "trajectory_distribution": dict(trajectory_counts),
+            "ending_attempt_rate": ending_attempt_rate,
+            "is_lengthy_rate": is_lengthy_rate,
+            "is_structured_rate": is_structured_rate,
+            "avg_turns": avg_turns,
+        })
+
+    return sorted(results, key=lambda x: -x["conversation_count"])

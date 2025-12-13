@@ -40,57 +40,56 @@ MOOD_COLORS = {
     "depth": "#45B7D1",   # Deep blue
 }
 
-# CSS for custom styling
+# CSS for custom styling - works with light and dark modes
 CUSTOM_CSS = """
 <style>
-    .model-card {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        border-radius: 12px;
-        padding: 20px;
-        margin: 10px 0;
-        border: 1px solid #333;
-    }
-
-    .partner-card {
-        background: #0d1117;
-        border-radius: 8px;
-        padding: 12px;
-        margin: 5px 0;
-        border: 1px solid #21262d;
+    .topic-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 8px 0;
     }
 
     .topic-tag {
         display: inline-block;
-        padding: 4px 12px;
-        margin: 2px;
-        border-radius: 16px;
+        padding: 5px 12px;
+        border-radius: 4px;
         font-size: 0.85em;
-        font-weight: 500;
+        font-weight: 400;
+        white-space: nowrap;
+        background-color: rgba(128, 128, 128, 0.15);
+        border: 1px solid rgba(128, 128, 128, 0.3);
     }
 
-    .mood-bar {
-        height: 8px;
-        border-radius: 4px;
+    .mood-bar-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         margin: 4px 0;
     }
 
-    .stat-number {
-        font-size: 2em;
-        font-weight: bold;
-        color: #fff;
-    }
-
-    .stat-label {
+    .mood-label {
+        width: 60px;
         font-size: 0.85em;
-        color: #888;
-        text-transform: uppercase;
+        opacity: 0.7;
     }
 
-    .trajectory-badge {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 4px;
-        font-weight: 500;
+    .mood-bar {
+        flex: 1;
+        height: 6px;
+        background: rgba(128, 128, 128, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .model-section {
+        border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        padding: 24px 0;
+        margin-bottom: 8px;
+    }
+
+    .model-section:last-child {
+        border-bottom: none;
     }
 </style>
 """
