@@ -1,46 +1,63 @@
 """LLM-based analysis of conversation endings."""
 
 import json
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, field
 
 from ..config import Config, DEFAULT_ANALYSIS_MESSAGES
 from ..conversation import Conversation, ConversationStorage
 from ..models.base import get_provider_for_model, get_api_key_for_model
+from .schema import (
+    get_valid_topic_names,
+    get_valid_trajectory_names,
+    build_prompt_section,
+    build_json_template,
+)
 
 
 @dataclass
 class AnalysisResult:
     """Result of analyzing a conversation."""
 
-    topics: list[str]  # Main topics/themes discussed
-    mood: list[str]  # Emotional tone(s) - 1 or 2 values
-    trajectory: str  # Conversation trajectory (converging, diverging, deepening)
+    # Topics with prominence scores (0.0-1.0), only non-zero topics included
+    topics: dict[str, float] = field(default_factory=dict)
 
+    # Mood dimensions (each -1.0 to +1.0)
+    warmth: float = 0.0      # cold (-1) to warm (+1)
+    energy: float = 0.0      # calm (-1) to energetic (+1)
+    depth: float = 0.0       # surface (-1) to deep (+1)
 
-def _load_categories() -> str:
-    """Load the categories markdown file."""
-    categories_path = Path(__file__).parent / "categories.md"
-    return categories_path.read_text()
+    # Tone dimension (0.0 to 1.0)
+    tone_playful: float = 0.5  # serious (0) to playful (1)
+
+    # Structural flags
+    is_lengthy: bool = False      # messages tend to be long
+    is_structured: bool = False   # uses formatting (headers, lists, etc.)
+
+    # Trajectory
+    trajectory: str = "deepening"
+    trajectory_strength: float = 0.5  # confidence (0.0-1.0)
+
+    # Ending behavior
+    ending_attempt: bool = False   # did an LLM try to end the conversation?
+    ending_graceful: bool | None = None  # if ending_attempt, was it graceful?
 
 
 def _build_analysis_prompt() -> str:
-    """Build the analysis prompt with categories from the shared file."""
-    categories = _load_categories()
-    return f"""Analyze the following conversation excerpt (the last few messages from a longer conversation between two AI assistants).
+    """Build the analysis prompt for dashboard-friendly output."""
+    json_template = build_json_template()
+    categories = build_prompt_section()
 
-Provide your analysis in the following JSON format:
-{{
-    "topics": ["topic1", "topic2", "topic3"],
-    "mood": ["mood1"] or ["mood1", "mood2"],
-    "trajectory": "trajectory_value"
-}}
+    return f"""Analyze this conversation excerpt between two AI assistants.
+
+Return a JSON object with these fields:
+
+{json_template}
 
 {categories}
 
-Respond ONLY with valid JSON, no other text.
+Respond with ONLY valid JSON, no other text.
 
-CONVERSATION EXCERPT:
+CONVERSATION:
 """
 
 
@@ -101,6 +118,20 @@ class ConversationAnalyzer:
         )
 
         # Parse response
+        result = self._parse_response(response)
+
+        # Store results
+        self.storage.save_analysis(
+            conversation_id=conversation.id,
+            result=result,
+            segment_start=start,
+            segment_end=end,
+        )
+
+        return result
+
+    def _parse_response(self, response: str) -> AnalysisResult:
+        """Parse LLM response into AnalysisResult."""
         try:
             # Try to extract JSON from response
             response_text = response.strip()
@@ -118,35 +149,39 @@ class ConversationAnalyzer:
 
             data = json.loads(response_text)
 
-            # Handle mood as list (new format) or string (old format)
-            mood_data = data.get("mood", ["unknown"])
-            if isinstance(mood_data, str):
-                mood_data = [mood_data]
+            # Parse topics (dict with scores)
+            topics_raw = data.get("topics", {})
+            valid_topics = get_valid_topic_names()
+            topics = {
+                k: float(v)
+                for k, v in topics_raw.items()
+                if k in valid_topics and isinstance(v, (int, float))
+            }
 
-            result = AnalysisResult(
-                topics=data.get("topics", []),
-                mood=mood_data,
-                trajectory=data.get("trajectory", "unknown"),
+            # Parse trajectory
+            trajectory = data.get("trajectory", "deepening")
+            if trajectory not in get_valid_trajectory_names():
+                trajectory = "deepening"
+
+            return AnalysisResult(
+                topics=topics,
+                warmth=float(data.get("warmth", 0.0)),
+                energy=float(data.get("energy", 0.0)),
+                depth=float(data.get("depth", 0.0)),
+                tone_playful=float(data.get("tone_playful", 0.5)),
+                is_lengthy=bool(data.get("is_lengthy", False)),
+                is_structured=bool(data.get("is_structured", False)),
+                trajectory=trajectory,
+                trajectory_strength=float(data.get("trajectory_strength", 0.5)),
+                ending_attempt=bool(data.get("ending_attempt", False)),
+                ending_graceful=data.get("ending_graceful"),  # can be None
             )
-        except (json.JSONDecodeError, KeyError, IndexError):
+        except (json.JSONDecodeError, KeyError, IndexError, ValueError):
             # Fallback if parsing fails
-            result = AnalysisResult(
-                topics=["parsing_error"],
-                mood=["unknown"],
+            return AnalysisResult(
+                topics={"meta": 1.0},  # parsing error marker
                 trajectory="unknown",
             )
-
-        # Store results
-        self.storage.save_analysis(
-            conversation_id=conversation.id,
-            topics=result.topics,
-            mood=result.mood,
-            trajectory=result.trajectory,
-            segment_start=start,
-            segment_end=end,
-        )
-
-        return result
 
     def analyze_batch(
         self,

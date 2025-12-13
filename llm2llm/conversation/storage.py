@@ -1,12 +1,18 @@
 """Storage layer for conversations - SQLite metadata + JSON files."""
 
+from __future__ import annotations
+
 import json
 import sqlite3
+from dataclasses import asdict
 from pathlib import Path
 from datetime import datetime, timezone
-from typing import Iterator
+from typing import Iterator, TYPE_CHECKING
 
 from .schemas import Conversation, ConversationStatus
+
+if TYPE_CHECKING:
+    from ..analysis.analyzer import AnalysisResult
 
 
 class ConversationStorage:
@@ -93,14 +99,20 @@ class ConversationStorage:
                         conversation_id TEXT NOT NULL,
                         segment_start INTEGER NOT NULL DEFAULT -5,
                         segment_end INTEGER,  -- NULL means "to the end"
-                        topics TEXT,  -- JSON array of topics
-                        mood TEXT,
+                        topics TEXT,  -- JSON (dict or array for backward compat)
+                        mood TEXT,  -- JSON (legacy)
                         trajectory TEXT,
+                        analysis_json TEXT,  -- Full AnalysisResult as JSON
                         analyzed_at TEXT NOT NULL,
                         PRIMARY KEY (conversation_id, segment_start, segment_end),
                         FOREIGN KEY (conversation_id) REFERENCES conversations(id)
                     )
                 """)
+            # Add analysis_json column if it doesn't exist (migration for existing DBs)
+            cursor = conn.execute("PRAGMA table_info(analysis_results)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if "analysis_json" not in columns:
+                conn.execute("ALTER TABLE analysis_results ADD COLUMN analysis_json TEXT")
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_conversations_models
                 ON conversations(llm1_model, llm2_model)
@@ -219,9 +231,7 @@ class ConversationStorage:
     def save_analysis(
         self,
         conversation_id: str,
-        topics: list[str],
-        mood: str | list[str],
-        trajectory: str,
+        result: AnalysisResult,
         segment_start: int = -5,
         segment_end: int | None = None,
     ) -> None:
@@ -229,33 +239,33 @@ class ConversationStorage:
 
         Args:
             conversation_id: The conversation ID
-            topics: List of topics
-            mood: Single mood string or list of 1-2 moods
-            trajectory: Conversation trajectory
+            result: AnalysisResult object with all analysis data
             segment_start: Start index for message segment (default: -5, last 5 messages)
             segment_end: End index for message segment (default: None, to the end)
         """
-        # Store mood as JSON list (handle both old string and new list format)
-        if isinstance(mood, str):
-            mood_json = json.dumps([mood])
-        else:
-            mood_json = json.dumps(mood)
+        # Convert result to JSON for storage
+        result_dict = asdict(result)
+        analysis_json = json.dumps(result_dict)
+
+        # Also store legacy columns for backward compatibility
+        topics_json = json.dumps(result.topics)  # now a dict
+        trajectory = result.trajectory
 
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 INSERT INTO analysis_results
-                (conversation_id, segment_start, segment_end, topics, mood, trajectory, analyzed_at)
+                (conversation_id, segment_start, segment_end, topics, trajectory, analysis_json, analyzed_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(conversation_id, segment_start, segment_end)
-                DO UPDATE SET topics=excluded.topics, mood=excluded.mood,
-                              trajectory=excluded.trajectory, analyzed_at=excluded.analyzed_at
+                DO UPDATE SET topics=excluded.topics, trajectory=excluded.trajectory,
+                              analysis_json=excluded.analysis_json, analyzed_at=excluded.analyzed_at
             """, (
                 conversation_id,
                 segment_start,
                 segment_end,
-                json.dumps(topics),
-                mood_json,
+                topics_json,
                 trajectory,
+                analysis_json,
                 datetime.now(timezone.utc).isoformat(),
             ))
             # Update conversation status
@@ -274,27 +284,81 @@ class ConversationStorage:
         """
         Get aggregated analysis report by LLM pair and segment.
 
-        Args:
-            llm1_model: Optional filter by initiator model
-            llm2_model: Optional filter by responder model
-            segment_start: Optional filter by segment start index
-            segment_end: Optional filter by segment end index (use -1 for NULL)
-
         Returns list of dicts with pair info, segment, and aggregated analysis.
+        """
+        # Get all analyses and aggregate in Python for simplicity
+        analyses = self.get_all_analyses(llm1_model, llm2_model)
+
+        # Group by (llm1, llm2, segment_start, segment_end)
+        from collections import defaultdict
+
+        groups: dict[tuple, list[dict]] = defaultdict(list)
+        for a in analyses:
+            if segment_start is not None and a["segment_start"] != segment_start:
+                continue
+            if segment_end is not None:
+                if segment_end == -1 and a["segment_end"] is not None:
+                    continue
+                elif segment_end != -1 and a["segment_end"] != segment_end:
+                    continue
+
+            key = (a["llm1_model"], a["llm2_model"], a["segment_start"], a["segment_end"])
+            groups[key].append(a)
+
+        results = []
+        for (llm1, llm2, seg_start, seg_end), group in groups.items():
+            # Aggregate topics
+            topic_scores: dict[str, list[float]] = defaultdict(list)
+            for a in group:
+                for topic, score in a.get("topics", {}).items():
+                    topic_scores[topic].append(score)
+
+            avg_topics = {t: sum(s) / len(s) for t, s in topic_scores.items()}
+            top_topics = sorted(avg_topics.items(), key=lambda x: -x[1])[:10]
+
+            # Aggregate mood dimensions
+            n = len(group)
+            avg_warmth = sum(a.get("warmth", 0) for a in group) / n
+            avg_energy = sum(a.get("energy", 0) for a in group) / n
+            avg_depth = sum(a.get("depth", 0) for a in group) / n
+
+            results.append({
+                "llm1_model": llm1,
+                "llm2_model": llm2,
+                "segment_start": seg_start,
+                "segment_end": seg_end,
+                "conversation_count": n,
+                "top_topics": top_topics,
+                "avg_warmth": avg_warmth,
+                "avg_energy": avg_energy,
+                "avg_depth": avg_depth,
+            })
+
+        return sorted(results, key=lambda x: -x["conversation_count"])
+
+    def get_all_analyses(
+        self,
+        llm1_model: str | None = None,
+        llm2_model: str | None = None,
+    ) -> list[dict]:
+        """
+        Get all analysis results with conversation metadata.
+
+        Returns list of dicts with conversation info and full analysis data.
         """
         query = """
             SELECT
+                c.id,
                 c.llm1_model,
                 c.llm2_model,
+                c.turn_count,
                 a.segment_start,
                 a.segment_end,
-                COUNT(*) as conversation_count,
-                GROUP_CONCAT(a.topics) as all_topics,
-                GROUP_CONCAT(a.mood) as all_moods,
-                GROUP_CONCAT(a.trajectory) as all_trajectories
+                a.analysis_json,
+                a.analyzed_at
             FROM conversations c
             JOIN analysis_results a ON c.id = a.conversation_id
-            WHERE 1=1
+            WHERE a.analysis_json IS NOT NULL
         """
         params: list = []
 
@@ -304,17 +368,8 @@ class ConversationStorage:
         if llm2_model:
             query += " AND c.llm2_model = ?"
             params.append(llm2_model)
-        if segment_start is not None:
-            query += " AND a.segment_start = ?"
-            params.append(segment_start)
-        if segment_end is not None:
-            if segment_end == -1:
-                query += " AND a.segment_end IS NULL"
-            else:
-                query += " AND a.segment_end = ?"
-                params.append(segment_end)
 
-        query += " GROUP BY c.llm1_model, c.llm2_model, a.segment_start, a.segment_end ORDER BY conversation_count DESC"
+        query += " ORDER BY a.analyzed_at DESC"
 
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -322,80 +377,20 @@ class ConversationStorage:
 
         results = []
         for row in rows:
-            # Parse aggregated topics (GROUP_CONCAT joins JSON arrays with commas)
-            # The data looks like: '["topic1","topic2"],["topic3"]' - need to parse carefully
-            all_topics_str = row["all_topics"] or ""
-            all_topics = []
-            # Split by ],[ to separate JSON arrays, then reconstruct and parse each
-            if all_topics_str:
-                # Try parsing the concatenated string - it's multiple JSON arrays joined by commas
-                # We need to find complete JSON arrays
-                depth = 0
-                current = ""
-                for char in all_topics_str:
-                    current += char
-                    if char == "[":
-                        depth += 1
-                    elif char == "]":
-                        depth -= 1
-                        if depth == 0:
-                            try:
-                                parsed = json.loads(current.strip().lstrip(","))
-                                if isinstance(parsed, list):
-                                    all_topics.extend(parsed)
-                            except json.JSONDecodeError:
-                                pass  # Skip malformed entries
-                            current = ""
-
-            # Count topic frequencies
-            topic_counts: dict[str, int] = {}
-            for topic in all_topics:
-                topic_counts[topic] = topic_counts.get(topic, 0) + 1
-
-            # Parse aggregated moods (now stored as JSON arrays like topics)
-            all_moods_str = row["all_moods"] or ""
-            all_moods: list[str] = []
-            if all_moods_str:
-                # Same parsing logic as topics - find complete JSON arrays
-                depth = 0
-                current = ""
-                for char in all_moods_str:
-                    current += char
-                    if char == "[":
-                        depth += 1
-                    elif char == "]":
-                        depth -= 1
-                        if depth == 0:
-                            try:
-                                parsed = json.loads(current.strip().lstrip(","))
-                                if isinstance(parsed, list):
-                                    all_moods.extend(parsed)
-                            except json.JSONDecodeError:
-                                # Handle old string format (not JSON)
-                                clean = current.strip().lstrip(",").strip("[]\"")
-                                if clean:
-                                    all_moods.append(clean)
-                            current = ""
-                # Handle leftover (old format strings without brackets)
-                if current.strip():
-                    for m in current.split(","):
-                        m = m.strip()
-                        if m:
-                            all_moods.append(m)
-
-            # Count mood frequencies
-            mood_counts: dict[str, int] = {}
-            for mood in all_moods:
-                mood_counts[mood] = mood_counts.get(mood, 0) + 1
+            try:
+                analysis = json.loads(row["analysis_json"])
+            except json.JSONDecodeError:
+                continue
 
             results.append({
+                "conversation_id": row["id"],
                 "llm1_model": row["llm1_model"],
                 "llm2_model": row["llm2_model"],
+                "turn_count": row["turn_count"],
                 "segment_start": row["segment_start"],
                 "segment_end": row["segment_end"],
-                "conversation_count": row["conversation_count"],
-                "top_topics": sorted(topic_counts.items(), key=lambda x: -x[1])[:10],
-                "mood_distribution": sorted(mood_counts.items(), key=lambda x: -x[1]),
+                "analyzed_at": row["analyzed_at"],
+                **analysis,
             })
 
         return results

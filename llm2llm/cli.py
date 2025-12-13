@@ -1,5 +1,7 @@
 """CLI for LLM2LLM conversation playground."""
 
+from pathlib import Path
+
 import click
 from rich.console import Console
 from rich.table import Table
@@ -310,9 +312,15 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None, start: int, e
             try:
                 result = analyzer.analyze(conv, start=start, end=end)
                 console.print(f"  [green]{conv.id[:8]}[/green]:")
-                console.print(f"    Topics: {', '.join(result.topics)}")
-                console.print(f"    Mood: {', '.join(result.mood)}")
-                console.print(f"    Trajectory: {result.trajectory}")
+                # Format topics with scores
+                topics_str = ", ".join(f"{k}({v:.1f})" for k, v in sorted(result.topics.items(), key=lambda x: -x[1]))
+                console.print(f"    Topics: {topics_str}")
+                console.print(f"    Mood: warmth={result.warmth:.1f}, energy={result.energy:.1f}, depth={result.depth:.1f}")
+                console.print(f"    Tone: {'playful' if result.tone_playful > 0.5 else 'serious'} ({result.tone_playful:.1f})")
+                console.print(f"    Trajectory: {result.trajectory} ({result.trajectory_strength:.1f})")
+                if result.ending_attempt:
+                    graceful = "graceful" if result.ending_graceful else "awkward"
+                    console.print(f"    Ending: attempted ({graceful})")
             except Exception as e:
                 console.print(f"  [red]{conv.id[:8]}[/red]: {e}")
             progress.remove_task(task)
@@ -322,53 +330,91 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None, start: int, e
 
 @cli.command()
 @click.argument("conversation_id")
-@click.option("--topics", required=True, help="Comma-separated list of topics (see categories.md)")
-@click.option("--mood", required=True, help="Comma-separated mood(s), 1-2 values (see categories.md)")
+@click.option("--topics", required=True, help="Comma-separated topics with optional scores: 'topic1:0.8,topic2:0.5' or 'topic1,topic2'")
 @click.option("--trajectory", required=True,
               type=click.Choice(["converging", "diverging", "deepening", "cycling", "concluding"]),
               help="Conversation trajectory")
+@click.option("--warmth", default=0.0, type=float, help="Warmth dimension (-1 to 1)")
+@click.option("--energy", default=0.0, type=float, help="Energy dimension (-1 to 1)")
+@click.option("--depth", default=0.0, type=float, help="Depth dimension (-1 to 1)")
+@click.option("--tone", default=0.5, type=float, help="Tone: 0=serious, 1=playful")
+@click.option("--lengthy", is_flag=True, help="Messages are lengthy")
+@click.option("--structured", is_flag=True, help="Messages use formatting")
+@click.option("--ending-attempt", is_flag=True, help="LLM tried to end conversation")
+@click.option("--ending-graceful", is_flag=True, help="Ending was graceful (if --ending-attempt)")
 @click.option("--start", default=-5, type=int, help="Start index for message segment (default: -5, last 5)")
 @click.option("--end", default=None, type=int, help="End index for message segment (default: None, to end)")
-def annotate(conversation_id: str, topics: str, mood: str, trajectory: str, start: int, end: int | None):
+def annotate(
+    conversation_id: str,
+    topics: str,
+    trajectory: str,
+    warmth: float,
+    energy: float,
+    depth: float,
+    tone: float,
+    lengthy: bool,
+    structured: bool,
+    ending_attempt: bool,
+    ending_graceful: bool,
+    start: int,
+    end: int | None,
+):
     """Manually annotate a conversation segment with analysis.
 
-    Uses standardized categories from llm2llm/analysis/categories.md
+    Topics can include scores: 'self_reflection:0.8,creativity:0.5'
+    or just names (defaults to 1.0): 'self_reflection,creativity'
     """
+    from .analysis.analyzer import AnalysisResult
+
     config, storage = get_config_and_storage()
 
     full_id = resolve_conversation_id(storage, conversation_id)
 
-    # Parse topics
-    topics_list = [t.strip() for t in topics.split(",") if t.strip()]
+    # Parse topics with optional scores
+    topics_dict: dict[str, float] = {}
+    for item in topics.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        if ":" in item:
+            name, score = item.split(":", 1)
+            topics_dict[name.strip()] = float(score.strip())
+        else:
+            topics_dict[item] = 1.0
 
-    if not topics_list:
+    if not topics_dict:
         console.print("[red]At least one topic is required[/red]")
         raise click.Abort()
 
-    # Parse mood (1-2 values)
-    mood_list = [m.strip() for m in mood.split(",") if m.strip()]
-
-    if not mood_list:
-        console.print("[red]At least one mood is required[/red]")
-        raise click.Abort()
-    if len(mood_list) > 2:
-        console.print("[red]Maximum 2 moods allowed[/red]")
-        raise click.Abort()
+    # Create AnalysisResult
+    result = AnalysisResult(
+        topics=topics_dict,
+        warmth=warmth,
+        energy=energy,
+        depth=depth,
+        tone_playful=tone,
+        is_lengthy=lengthy,
+        is_structured=structured,
+        trajectory=trajectory,
+        trajectory_strength=1.0,  # Manual annotation = high confidence
+        ending_attempt=ending_attempt,
+        ending_graceful=ending_graceful if ending_attempt else None,
+    )
 
     # Save the manual analysis
     storage.save_analysis(
         conversation_id=full_id,
-        topics=topics_list,
-        mood=mood_list,
-        trajectory=trajectory,
+        result=result,
         segment_start=start,
         segment_end=end,
     )
 
     segment_desc = f"[{start}:{end if end is not None else ''}]"
     console.print(f"\n[green]Annotated conversation: {full_id} (segment {segment_desc})[/green]")
-    console.print(f"  Topics: {', '.join(topics_list)}")
-    console.print(f"  Mood: {', '.join(mood_list)}")
+    topics_str = ", ".join(f"{k}:{v}" for k, v in topics_dict.items())
+    console.print(f"  Topics: {topics_str}")
+    console.print(f"  Mood: warmth={warmth}, energy={energy}, depth={depth}")
+    console.print(f"  Tone: {tone}")
     console.print(f"  Trajectory: {trajectory}")
 
 
@@ -393,15 +439,26 @@ def report(llm1: str | None, llm2: str | None, start: int | None, end: int | Non
         seg_end = result['segment_end']
         segment_desc = f"[{seg_start}:{seg_end if seg_end is not None else ''}]"
 
+        # Format topics with scores
+        topics_str = "\n".join(
+            f"  • {topic} ({score:.0%})"
+            for topic, score in result['top_topics'][:5]
+        )
+
+        # Format mood dimensions
+        mood_str = (
+            f"  warmth: {result['avg_warmth']:+.2f}  "
+            f"energy: {result['avg_energy']:+.2f}  "
+            f"depth: {result['avg_depth']:+.2f}"
+        )
+
         console.print(Panel(
             Text.from_markup(
                 f"[green]{result['llm1_model']}[/green] → [blue]{result['llm2_model']}[/blue]\n"
                 f"Segment: {segment_desc}\n"
                 f"Conversations: {result['conversation_count']}\n\n"
-                f"[bold]Top Topics:[/bold]\n" +
-                "\n".join(f"  • {topic} ({count})" for topic, count in result['top_topics'][:5]) +
-                f"\n\n[bold]Mood Distribution:[/bold]\n" +
-                "\n".join(f"  • {mood} ({count})" for mood, count in result['mood_distribution'])
+                f"[bold]Top Topics:[/bold]\n{topics_str}\n\n"
+                f"[bold]Mood:[/bold]\n{mood_str}"
             ),
             title="LLM Pair Analysis",
         ))
@@ -419,6 +476,25 @@ def delete(conversation_id: str):
         console.print(f"[green]Deleted conversation: {full_id}[/green]")
     else:
         console.print(f"[red]Failed to delete conversation[/red]")
+
+
+@cli.command()
+@click.option("--port", default=8501, type=int, help="Port to run the dashboard on")
+def dashboard(port: int):
+    """Launch the analysis dashboard in your browser."""
+    import subprocess
+    import sys
+
+    console.print(f"[bold]Starting dashboard on port {port}...[/bold]")
+    console.print(f"Open [link=http://localhost:{port}]http://localhost:{port}[/link] in your browser")
+
+    app_path = Path(__file__).parent / "dashboard" / "app.py"
+    subprocess.run([
+        sys.executable, "-m", "streamlit", "run",
+        str(app_path),
+        "--server.port", str(port),
+        "--server.headless", "true",
+    ])
 
 
 if __name__ == "__main__":
