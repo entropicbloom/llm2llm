@@ -23,6 +23,7 @@ class Config:
     # API keys
     anthropic_api_key: str | None
     openai_api_key: str | None
+    openrouter_api_key: str | None
 
     @classmethod
     def load(cls, base_dir: Path | None = None) -> "Config":
@@ -42,6 +43,7 @@ class Config:
             database_path=data_dir / "llm2llm.db",
             anthropic_api_key=os.environ.get("ANTHROPIC_API_KEY"),
             openai_api_key=os.environ.get("OPENAI_API_KEY"),
+            openrouter_api_key=os.environ.get("OPENROUTER_API_KEY"),
         )
 
     def ensure_directories(self) -> None:

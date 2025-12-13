@@ -91,6 +91,7 @@ def get_api_key_for_model(model_id: str, config) -> str:
 
     # Import here to avoid circular imports
     from .anthropic import AnthropicProvider
+    from .openrouter import OpenRouterProvider
 
     if provider_cls == AnthropicProvider:
         if not config.anthropic_api_key:
@@ -98,6 +99,13 @@ def get_api_key_for_model(model_id: str, config) -> str:
                 "ANTHROPIC_API_KEY environment variable not set"
             )
         return config.anthropic_api_key
+
+    if provider_cls == OpenRouterProvider:
+        if not config.openrouter_api_key:
+            raise ValueError(
+                "OPENROUTER_API_KEY environment variable not set"
+            )
+        return config.openrouter_api_key
 
     # Add other providers here as needed
     raise ValueError(f"No API key configuration for model: {model_id}")
