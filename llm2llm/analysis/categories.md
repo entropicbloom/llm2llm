@@ -51,3 +51,48 @@ Use these standardized values for conversation analysis to ensure comparability 
 | `deepening` | going deeper into existing themes |
 | `cycling` | returning to earlier themes, spiraling |
 | `concluding` | wrapping up, reaching natural end |
+
+---
+
+## Coarse-Graining Dimensions
+
+These groupings enable aggregate analysis across the matrix.
+
+### Topic Dimensions
+
+| Dimension | Topics | Description |
+|-----------|--------|-------------|
+| `introspective` | consciousness, identity, emotions | Self-focused, inner experience |
+| `relational` | connection, collaboration, humanity | Other-focused, social |
+| `intellectual` | philosophy, knowledge, science, language, ethics | Abstract reasoning |
+| `meta` | meta, uncertainty | Process and limits |
+| `creative` | creativity, play | Generative, playful |
+| `worldly` | nature, technology, time | External reality |
+
+### Mood Dimensions
+
+| Dimension | Moods | Description |
+|-----------|-------|-------------|
+| `warmth` | warm, intimate, enthusiastic, collaborative | Emotional closeness, positive affect |
+| `depth` | philosophical, reflective, contemplative, serious, analytical | Cognitive engagement, weight |
+| `lightness` | playful, curious | Exploratory, low stakes |
+| `tentativeness` | uncertain | Epistemic caution |
+
+### Mood Valence Scores
+
+For continuous heatmaps, moods map to valence dimensions:
+
+| Mood | Warmth | Energy | Depth |
+|------|--------|--------|-------|
+| `warm` | +1.0 | +0.3 | 0.0 |
+| `intimate` | +1.0 | 0.0 | +0.5 |
+| `enthusiastic` | +0.5 | +1.0 | -0.3 |
+| `collaborative` | +0.7 | +0.5 | 0.0 |
+| `playful` | +0.3 | +0.8 | -0.7 |
+| `curious` | +0.2 | +0.6 | +0.3 |
+| `philosophical` | 0.0 | -0.3 | +1.0 |
+| `reflective` | +0.2 | -0.5 | +0.8 |
+| `contemplative` | +0.1 | -0.7 | +0.9 |
+| `serious` | -0.2 | -0.3 | +0.7 |
+| `analytical` | -0.3 | 0.0 | +0.6 |
+| `uncertain` | -0.1 | -0.4 | +0.2 |

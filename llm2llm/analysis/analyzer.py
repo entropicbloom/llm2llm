@@ -56,21 +56,31 @@ class ConversationAnalyzer:
     ):
         self.config = config
         self.storage = storage
-        self.analysis_model = analysis_model or "claude-3-5-haiku-20241022"
+        self.analysis_model = analysis_model or "claude-sonnet-4-5-20250929"
         self.messages_to_analyze = messages_to_analyze
 
-    def analyze(self, conversation: Conversation) -> AnalysisResult:
+    def analyze(
+        self,
+        conversation: Conversation,
+        start: int = -5,
+        end: int | None = None,
+    ) -> AnalysisResult:
         """
-        Analyze a conversation and store the results.
+        Analyze a conversation segment and store the results.
 
         Args:
             conversation: The conversation to analyze
+            start: Start index for message segment (default: -5, last 5 messages)
+            end: End index for message segment (default: None, to the end)
 
         Returns:
             AnalysisResult with topics, mood, and trajectory
         """
-        # Get the last N messages
-        messages = conversation.messages[-self.messages_to_analyze:]
+        # Slice messages based on start/end indices
+        if end is None:
+            messages = conversation.messages[start:]
+        else:
+            messages = conversation.messages[start:end]
 
         # Format messages for the prompt
         excerpt = "\n\n".join(
@@ -132,6 +142,8 @@ class ConversationAnalyzer:
             topics=result.topics,
             mood=result.mood,
             trajectory=result.trajectory,
+            segment_start=start,
+            segment_end=end,
         )
 
         return result

@@ -279,9 +279,11 @@ def view(conversation_id: str, tail: int | None):
 @cli.command()
 @click.option("--llm1", default=None, help="Filter by initiator model")
 @click.option("--llm2", default=None, help="Filter by responder model")
-@click.option("--model", default=None, help="Model to use for analysis (default: claude-3-5-haiku-20241022)")
-def analyze(llm1: str | None, llm2: str | None, model: str | None):
-    """Analyze conversation endings for topics and mood."""
+@click.option("--model", default=None, help="Model to use for analysis (default: claude-sonnet-4-5-20250929)")
+@click.option("--start", default=-5, type=int, help="Start index for message segment (default: -5, last 5)")
+@click.option("--end", default=None, type=int, help="End index for message segment (default: None, to end)")
+def analyze(llm1: str | None, llm2: str | None, model: str | None, start: int, end: int | None):
+    """Analyze conversation segments for topics and mood."""
     _ensure_providers_registered()
     from .analysis import ConversationAnalyzer
 
@@ -294,7 +296,9 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None):
         console.print("[dim]No conversations need analysis.[/dim]")
         return
 
-    console.print(f"\n[bold]Analyzing {len(conversations)} conversations[/bold]\n")
+    # Format segment description for display
+    segment_desc = f"[{start}:{end if end is not None else ''}]"
+    console.print(f"\n[bold]Analyzing {len(conversations)} conversations (segment {segment_desc})[/bold]\n")
 
     with Progress(
         SpinnerColumn(),
@@ -304,7 +308,7 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None):
         for conv in conversations:
             task = progress.add_task(f"Analyzing {conv.id[:8]}...", total=None)
             try:
-                result = analyzer.analyze(conv)
+                result = analyzer.analyze(conv, start=start, end=end)
                 console.print(f"  [green]{conv.id[:8]}[/green]:")
                 console.print(f"    Topics: {', '.join(result.topics)}")
                 console.print(f"    Mood: {', '.join(result.mood)}")
@@ -323,8 +327,10 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None):
 @click.option("--trajectory", required=True,
               type=click.Choice(["converging", "diverging", "deepening", "cycling", "concluding"]),
               help="Conversation trajectory")
-def annotate(conversation_id: str, topics: str, mood: str, trajectory: str):
-    """Manually annotate a conversation with analysis.
+@click.option("--start", default=-5, type=int, help="Start index for message segment (default: -5, last 5)")
+@click.option("--end", default=None, type=int, help="End index for message segment (default: None, to end)")
+def annotate(conversation_id: str, topics: str, mood: str, trajectory: str, start: int, end: int | None):
+    """Manually annotate a conversation segment with analysis.
 
     Uses standardized categories from llm2llm/analysis/categories.md
     """
@@ -355,9 +361,12 @@ def annotate(conversation_id: str, topics: str, mood: str, trajectory: str):
         topics=topics_list,
         mood=mood_list,
         trajectory=trajectory,
+        segment_start=start,
+        segment_end=end,
     )
 
-    console.print(f"\n[green]Annotated conversation: {full_id}[/green]")
+    segment_desc = f"[{start}:{end if end is not None else ''}]"
+    console.print(f"\n[green]Annotated conversation: {full_id} (segment {segment_desc})[/green]")
     console.print(f"  Topics: {', '.join(topics_list)}")
     console.print(f"  Mood: {', '.join(mood_list)}")
     console.print(f"  Trajectory: {trajectory}")
@@ -366,20 +375,28 @@ def annotate(conversation_id: str, topics: str, mood: str, trajectory: str):
 @cli.command()
 @click.option("--llm1", default=None, help="Filter by initiator model")
 @click.option("--llm2", default=None, help="Filter by responder model")
-def report(llm1: str | None, llm2: str | None):
-    """Show aggregated analysis report by LLM pair."""
+@click.option("--start", default=None, type=int, help="Filter by segment start index")
+@click.option("--end", default=None, type=int, help="Filter by segment end index (use -1 for 'to end')")
+def report(llm1: str | None, llm2: str | None, start: int | None, end: int | None):
+    """Show aggregated analysis report by LLM pair and segment."""
     config, storage = get_config_and_storage()
 
-    results = storage.get_analysis_report(llm1, llm2)
+    results = storage.get_analysis_report(llm1, llm2, segment_start=start, segment_end=end)
 
     if not results:
         console.print("[dim]No analysis data available. Run 'llm2llm analyze' first.[/dim]")
         return
 
     for result in results:
+        # Format segment description
+        seg_start = result['segment_start']
+        seg_end = result['segment_end']
+        segment_desc = f"[{seg_start}:{seg_end if seg_end is not None else ''}]"
+
         console.print(Panel(
             Text.from_markup(
                 f"[green]{result['llm1_model']}[/green] → [blue]{result['llm2_model']}[/blue]\n"
+                f"Segment: {segment_desc}\n"
                 f"Conversations: {result['conversation_count']}\n\n"
                 f"[bold]Top Topics:[/bold]\n" +
                 "\n".join(f"  • {topic} ({count})" for topic, count in result['top_topics'][:5]) +

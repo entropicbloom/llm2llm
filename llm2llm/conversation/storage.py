@@ -31,16 +31,76 @@ class ConversationStorage:
                     updated_at TEXT NOT NULL
                 )
             """)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS analysis_results (
-                    conversation_id TEXT PRIMARY KEY,
-                    topics TEXT,  -- JSON array of topics
-                    mood TEXT,
-                    trajectory TEXT,
-                    analyzed_at TEXT NOT NULL,
-                    FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+            # Check if analysis_results table exists and needs migration
+            cursor = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='analysis_results'"
+            )
+            table_exists = cursor.fetchone() is not None
+
+            if table_exists:
+                # Check if migration is needed:
+                # 1. segment_start column missing, OR
+                # 2. Primary key is not the composite key (check by looking at table schema)
+                cursor = conn.execute("PRAGMA table_info(analysis_results)")
+                columns = [row[1] for row in cursor.fetchall()]
+
+                # Check if we have the old primary key by looking at the CREATE statement
+                cursor = conn.execute(
+                    "SELECT sql FROM sqlite_master WHERE type='table' AND name='analysis_results'"
                 )
-            """)
+                create_sql = cursor.fetchone()[0]
+                needs_migration = (
+                    'segment_start' not in columns or
+                    'PRIMARY KEY (conversation_id, segment_start, segment_end)' not in create_sql
+                )
+
+                if needs_migration:
+                    # Migration: recreate table with new composite primary key
+                    conn.execute("""
+                        CREATE TABLE analysis_results_new (
+                            conversation_id TEXT NOT NULL,
+                            segment_start INTEGER NOT NULL DEFAULT -5,
+                            segment_end INTEGER,
+                            topics TEXT,
+                            mood TEXT,
+                            trajectory TEXT,
+                            analyzed_at TEXT NOT NULL,
+                            PRIMARY KEY (conversation_id, segment_start, segment_end),
+                            FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+                        )
+                    """)
+                    # Copy data, using existing segment values if columns exist, else defaults
+                    if 'segment_start' in columns:
+                        conn.execute("""
+                            INSERT INTO analysis_results_new
+                            (conversation_id, segment_start, segment_end, topics, mood, trajectory, analyzed_at)
+                            SELECT conversation_id, segment_start, segment_end, topics, mood, trajectory, analyzed_at
+                            FROM analysis_results
+                        """)
+                    else:
+                        conn.execute("""
+                            INSERT INTO analysis_results_new
+                            (conversation_id, segment_start, segment_end, topics, mood, trajectory, analyzed_at)
+                            SELECT conversation_id, -5, NULL, topics, mood, trajectory, analyzed_at
+                            FROM analysis_results
+                        """)
+                    conn.execute("DROP TABLE analysis_results")
+                    conn.execute("ALTER TABLE analysis_results_new RENAME TO analysis_results")
+            else:
+                # Create fresh table with new schema
+                conn.execute("""
+                    CREATE TABLE analysis_results (
+                        conversation_id TEXT NOT NULL,
+                        segment_start INTEGER NOT NULL DEFAULT -5,
+                        segment_end INTEGER,  -- NULL means "to the end"
+                        topics TEXT,  -- JSON array of topics
+                        mood TEXT,
+                        trajectory TEXT,
+                        analyzed_at TEXT NOT NULL,
+                        PRIMARY KEY (conversation_id, segment_start, segment_end),
+                        FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+                    )
+                """)
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_conversations_models
                 ON conversations(llm1_model, llm2_model)
@@ -162,8 +222,19 @@ class ConversationStorage:
         topics: list[str],
         mood: str | list[str],
         trajectory: str,
+        segment_start: int = -5,
+        segment_end: int | None = None,
     ) -> None:
-        """Save analysis results for a conversation."""
+        """Save analysis results for a conversation segment.
+
+        Args:
+            conversation_id: The conversation ID
+            topics: List of topics
+            mood: Single mood string or list of 1-2 moods
+            trajectory: Conversation trajectory
+            segment_start: Start index for message segment (default: -5, last 5 messages)
+            segment_end: End index for message segment (default: None, to the end)
+        """
         # Store mood as JSON list (handle both old string and new list format)
         if isinstance(mood, str):
             mood_json = json.dumps([mood])
@@ -172,11 +243,16 @@ class ConversationStorage:
 
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
-                INSERT OR REPLACE INTO analysis_results
-                (conversation_id, topics, mood, trajectory, analyzed_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO analysis_results
+                (conversation_id, segment_start, segment_end, topics, mood, trajectory, analyzed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(conversation_id, segment_start, segment_end)
+                DO UPDATE SET topics=excluded.topics, mood=excluded.mood,
+                              trajectory=excluded.trajectory, analyzed_at=excluded.analyzed_at
             """, (
                 conversation_id,
+                segment_start,
+                segment_end,
                 json.dumps(topics),
                 mood_json,
                 trajectory,
@@ -192,16 +268,26 @@ class ConversationStorage:
         self,
         llm1_model: str | None = None,
         llm2_model: str | None = None,
+        segment_start: int | None = None,
+        segment_end: int | None = None,
     ) -> list[dict]:
         """
-        Get aggregated analysis report by LLM pair.
+        Get aggregated analysis report by LLM pair and segment.
 
-        Returns list of dicts with pair info and aggregated analysis.
+        Args:
+            llm1_model: Optional filter by initiator model
+            llm2_model: Optional filter by responder model
+            segment_start: Optional filter by segment start index
+            segment_end: Optional filter by segment end index (use -1 for NULL)
+
+        Returns list of dicts with pair info, segment, and aggregated analysis.
         """
         query = """
             SELECT
                 c.llm1_model,
                 c.llm2_model,
+                a.segment_start,
+                a.segment_end,
                 COUNT(*) as conversation_count,
                 GROUP_CONCAT(a.topics) as all_topics,
                 GROUP_CONCAT(a.mood) as all_moods,
@@ -218,8 +304,17 @@ class ConversationStorage:
         if llm2_model:
             query += " AND c.llm2_model = ?"
             params.append(llm2_model)
+        if segment_start is not None:
+            query += " AND a.segment_start = ?"
+            params.append(segment_start)
+        if segment_end is not None:
+            if segment_end == -1:
+                query += " AND a.segment_end IS NULL"
+            else:
+                query += " AND a.segment_end = ?"
+                params.append(segment_end)
 
-        query += " GROUP BY c.llm1_model, c.llm2_model ORDER BY conversation_count DESC"
+        query += " GROUP BY c.llm1_model, c.llm2_model, a.segment_start, a.segment_end ORDER BY conversation_count DESC"
 
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
@@ -296,6 +391,8 @@ class ConversationStorage:
             results.append({
                 "llm1_model": row["llm1_model"],
                 "llm2_model": row["llm2_model"],
+                "segment_start": row["segment_start"],
+                "segment_end": row["segment_end"],
                 "conversation_count": row["conversation_count"],
                 "top_topics": sorted(topic_counts.items(), key=lambda x: -x[1])[:10],
                 "mood_distribution": sorted(mood_counts.items(), key=lambda x: -x[1]),

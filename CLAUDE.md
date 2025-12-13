@@ -112,11 +112,26 @@ LEFT JOIN analysis_results a ON c.id = a.conversation_id;
 
 ### LLM-Based Analysis
 ```bash
-llm2llm analyze [--llm1 MODEL] [--llm2 MODEL] [--model ANALYSIS_MODEL]
+llm2llm analyze [--llm1 MODEL] [--llm2 MODEL] [--model ANALYSIS_MODEL] [--start N] [--end N]
 ```
-- Analyzes last 5 messages of completed/paused conversations
+- Analyzes a segment of completed/paused conversations
+- `--start`: Start index (default: -5, last 5 messages). Supports negative indices.
+- `--end`: End index (default: None, to end of conversation)
 - Extracts: topics (2-5), mood (1-2), trajectory (1)
-- Uses `claude-3-5-haiku-20241022` by default for analysis
+- Uses `claude-sonnet-4-5-20250929` by default for analysis
+- Multiple analyses per conversation are supported (different segments)
+
+Examples:
+```bash
+# Analyze last 5 messages (default)
+llm2llm analyze
+
+# Analyze first 5 messages
+llm2llm analyze --start 0 --end 5
+
+# Analyze messages 10-15
+llm2llm analyze --start 10 --end 15
+```
 - Results stored in `analysis_results` table
 - Uses standardized categories (see `llm2llm/analysis/categories.md`)
 
@@ -125,17 +140,21 @@ llm2llm analyze [--llm1 MODEL] [--llm2 MODEL] [--model ANALYSIS_MODEL]
 llm2llm annotate CONVERSATION_ID \
   --topics "consciousness, identity, connection" \
   --mood "reflective, warm" \
-  --trajectory deepening
+  --trajectory deepening \
+  [--start N] [--end N]
 ```
 - Topics: 2-5 comma-separated values
 - Mood: 1-2 comma-separated values
+- `--start`: Start index (default: -5, last 5 messages)
+- `--end`: End index (default: None, to end)
 - Uses standardized categories (see `llm2llm/analysis/categories.md`)
 
 ### View Aggregated Report
 ```bash
-llm2llm report [--llm1 MODEL] [--llm2 MODEL]
+llm2llm report [--llm1 MODEL] [--llm2 MODEL] [--start N] [--end N]
 ```
-Shows top topics and mood distribution per ordered LLM pair.
+Shows top topics and mood distribution per ordered LLM pair and segment.
+- `--start`/`--end`: Filter by segment (use `--end -1` for "to end")
 
 ## Experiment Workflow
 
