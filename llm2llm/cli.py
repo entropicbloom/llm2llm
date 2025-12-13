@@ -307,7 +307,7 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None):
                 result = analyzer.analyze(conv)
                 console.print(f"  [green]{conv.id[:8]}[/green]:")
                 console.print(f"    Topics: {', '.join(result.topics)}")
-                console.print(f"    Mood: {result.mood}")
+                console.print(f"    Mood: {', '.join(result.mood)}")
                 console.print(f"    Trajectory: {result.trajectory}")
             except Exception as e:
                 console.print(f"  [red]{conv.id[:8]}[/red]: {e}")
@@ -318,13 +318,16 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None):
 
 @cli.command()
 @click.argument("conversation_id")
-@click.option("--topics", required=True, help="Comma-separated list of topics")
-@click.option("--mood", required=True, help="Mood/emotional tone (e.g., curious, playful, philosophical)")
+@click.option("--topics", required=True, help="Comma-separated list of topics (see categories.md)")
+@click.option("--mood", required=True, help="Comma-separated mood(s), 1-2 values (see categories.md)")
 @click.option("--trajectory", required=True,
               type=click.Choice(["converging", "diverging", "deepening", "cycling", "concluding"]),
               help="Conversation trajectory")
 def annotate(conversation_id: str, topics: str, mood: str, trajectory: str):
-    """Manually annotate a conversation with analysis."""
+    """Manually annotate a conversation with analysis.
+
+    Uses standardized categories from llm2llm/analysis/categories.md
+    """
     config, storage = get_config_and_storage()
 
     full_id = resolve_conversation_id(storage, conversation_id)
@@ -336,17 +339,27 @@ def annotate(conversation_id: str, topics: str, mood: str, trajectory: str):
         console.print("[red]At least one topic is required[/red]")
         raise click.Abort()
 
+    # Parse mood (1-2 values)
+    mood_list = [m.strip() for m in mood.split(",") if m.strip()]
+
+    if not mood_list:
+        console.print("[red]At least one mood is required[/red]")
+        raise click.Abort()
+    if len(mood_list) > 2:
+        console.print("[red]Maximum 2 moods allowed[/red]")
+        raise click.Abort()
+
     # Save the manual analysis
     storage.save_analysis(
         conversation_id=full_id,
         topics=topics_list,
-        mood=mood,
+        mood=mood_list,
         trajectory=trajectory,
     )
 
     console.print(f"\n[green]Annotated conversation: {full_id}[/green]")
     console.print(f"  Topics: {', '.join(topics_list)}")
-    console.print(f"  Mood: {mood}")
+    console.print(f"  Mood: {', '.join(mood_list)}")
     console.print(f"  Trajectory: {trajectory}")
 
 

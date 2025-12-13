@@ -30,13 +30,18 @@ llm2llm models
 ```
 
 Current Anthropic models:
-- `claude-opus-4-20250514`
-- `claude-sonnet-4-20250514`
-- `claude-3-5-sonnet-20241022`
-- `claude-3-5-haiku-20241022`
-- `claude-3-opus-20240229`
-- `claude-3-sonnet-20240229`
-- `claude-3-haiku-20240307`
+- `claude-opus-4-5-20251101` (Claude 4.5 Opus)
+- `claude-sonnet-4-5-20250929` (Claude 4.5 Sonnet)
+- `claude-haiku-4-5-20251001` (Claude 4.5 Haiku)
+- `claude-opus-4-1-20250805` (Claude 4.1 Opus)
+- `claude-opus-4-20250514` (Claude 4 Opus)
+- `claude-sonnet-4-20250514` (Claude 4 Sonnet)
+- `claude-3-7-sonnet-20250219` (Claude 3.7 Sonnet)
+- `claude-3-5-sonnet-20241022` (Claude 3.5 Sonnet)
+- `claude-3-5-haiku-20241022` (Claude 3.5 Haiku)
+- `claude-3-opus-20240229` (Claude 3 Opus)
+- `claude-3-sonnet-20240229` (Claude 3 Sonnet)
+- `claude-3-haiku-20240307` (Claude 3 Haiku)
 
 ## Running Experiments
 
@@ -110,21 +115,21 @@ LEFT JOIN analysis_results a ON c.id = a.conversation_id;
 llm2llm analyze [--llm1 MODEL] [--llm2 MODEL] [--model ANALYSIS_MODEL]
 ```
 - Analyzes last 5 messages of completed/paused conversations
-- Extracts: topics (list), mood (string), trajectory (string)
+- Extracts: topics (2-5), mood (1-2), trajectory (1)
 - Uses `claude-3-5-haiku-20241022` by default for analysis
 - Results stored in `analysis_results` table
+- Uses standardized categories (see `llm2llm/analysis/categories.md`)
 
 ### Manual Annotation
 ```bash
 llm2llm annotate CONVERSATION_ID \
-  --topics "topic1, topic2, topic3" \
-  --mood "curious" \
-  --trajectory converging
+  --topics "consciousness, identity, connection" \
+  --mood "reflective, warm" \
+  --trajectory deepening
 ```
-- Manually provide analysis for a conversation
-- Topics: comma-separated list
-- Mood: free text (e.g., curious, playful, philosophical, reflective, enthusiastic)
-- Trajectory: one of `converging`, `diverging`, `deepening`, `cycling`, `concluding`
+- Topics: 2-5 comma-separated values
+- Mood: 1-2 comma-separated values
+- Uses standardized categories (see `llm2llm/analysis/categories.md`)
 
 ### View Aggregated Report
 ```bash
@@ -184,33 +189,17 @@ Option B - Read JSON directly (for full programmatic access):
 ```
 
 ### Step 3: Analyze and annotate
-After reading the conversation (especially the last 5-10 messages), determine:
-
-**Topics** - What themes/subjects emerged? Examples:
-- consciousness, free will, creativity, emotions
-- mathematics, physics, philosophy, ethics
-- art, music, literature, storytelling
-- technology, AI, humanity, society
-
-**Mood** - What's the emotional tone? Examples:
-- curious, playful, philosophical, reflective
-- enthusiastic, collaborative, contemplative
-- serious, lighthearted, exploratory, warm
-
-**Trajectory** - How did the conversation evolve?
-- `converging` - Coming to agreement or conclusion
-- `diverging` - Exploring new directions, branching out
-- `deepening` - Going deeper into a single topic
-- `cycling` - Returning to earlier themes
-- `concluding` - Wrapping up, reaching natural end
+After reading the conversation (especially the last 5-10 messages), use the standardized categories below.
 
 ### Step 4: Save annotation
 ```bash
 llm2llm annotate CONVERSATION_ID \
-  --topics "topic1, topic2, topic3" \
-  --mood "the mood you identified" \
-  --trajectory converging|diverging|deepening|cycling|concluding
+  --topics "consciousness, identity, connection" \
+  --mood "reflective, warm" \
+  --trajectory deepening
 ```
+
+Note: `--mood` accepts 1-2 comma-separated values.
 
 ### Example Full Workflow
 ```bash
@@ -224,8 +213,8 @@ llm2llm view abc123 --tail 10
 
 # After reading, annotate it
 llm2llm annotate abc123 \
-  --topics "consciousness, emergence, self-awareness" \
-  --mood "philosophical and curious" \
+  --topics "consciousness, philosophy, identity" \
+  --mood "contemplative, curious" \
   --trajectory deepening
 ```
 
@@ -236,6 +225,16 @@ To analyze multiple conversations:
    - View with `llm2llm view ID --tail 10`
    - Annotate with `llm2llm annotate ID --topics "..." --mood "..." --trajectory ...`
 3. Check progress: `llm2llm list --status analyzed`
+
+## Annotation Categories
+
+**IMPORTANT:** Both manual (Claude Code) and automated (`llm2llm analyze`) analysis use the same standardized categories from:
+
+```
+llm2llm/analysis/categories.md
+```
+
+Before annotating, read this file to see all valid options for topics, mood, and trajectory. This ensures comparability across analysis methods.
 
 ## System Prompts
 

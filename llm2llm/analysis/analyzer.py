@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from ..config import Config, DEFAULT_ANALYSIS_MESSAGES
 from ..conversation import Conversation, ConversationStorage
@@ -13,23 +14,29 @@ class AnalysisResult:
     """Result of analyzing a conversation."""
 
     topics: list[str]  # Main topics/themes discussed
-    mood: str  # Emotional tone (curious, playful, philosophical, etc.)
+    mood: list[str]  # Emotional tone(s) - 1 or 2 values
     trajectory: str  # Conversation trajectory (converging, diverging, deepening)
 
 
-ANALYSIS_PROMPT = """Analyze the following conversation excerpt (the last few messages from a longer conversation between two AI assistants).
+def _load_categories() -> str:
+    """Load the categories markdown file."""
+    categories_path = Path(__file__).parent / "categories.md"
+    return categories_path.read_text()
+
+
+def _build_analysis_prompt() -> str:
+    """Build the analysis prompt with categories from the shared file."""
+    categories = _load_categories()
+    return f"""Analyze the following conversation excerpt (the last few messages from a longer conversation between two AI assistants).
 
 Provide your analysis in the following JSON format:
-{
+{{
     "topics": ["topic1", "topic2", "topic3"],
-    "mood": "one word or short phrase describing the emotional tone",
-    "trajectory": "one of: converging (coming to agreement/conclusion), diverging (exploring new directions), deepening (going deeper into a topic), cycling (returning to earlier themes), concluding (wrapping up)"
-}
+    "mood": ["mood1"] or ["mood1", "mood2"],
+    "trajectory": "trajectory_value"
+}}
 
-Focus on:
-1. Topics: What themes or subjects are being discussed? List 2-5 key topics.
-2. Mood: What's the emotional tone? (e.g., curious, playful, philosophical, serious, collaborative, debating, reflective, enthusiastic)
-3. Trajectory: How is the conversation evolving?
+{categories}
 
 Respond ONLY with valid JSON, no other text.
 
@@ -76,10 +83,11 @@ class ConversationAnalyzer:
         provider = get_provider_for_model(self.analysis_model, api_key)
 
         # Run analysis
+        analysis_prompt = _build_analysis_prompt()
         response = provider.generate(
             model_id=self.analysis_model,
             system_prompt="You are an expert conversation analyst. Respond only with valid JSON.",
-            messages=[{"role": "user", "content": ANALYSIS_PROMPT + excerpt}],
+            messages=[{"role": "user", "content": analysis_prompt + excerpt}],
         )
 
         # Parse response
@@ -100,16 +108,21 @@ class ConversationAnalyzer:
 
             data = json.loads(response_text)
 
+            # Handle mood as list (new format) or string (old format)
+            mood_data = data.get("mood", ["unknown"])
+            if isinstance(mood_data, str):
+                mood_data = [mood_data]
+
             result = AnalysisResult(
                 topics=data.get("topics", []),
-                mood=data.get("mood", "unknown"),
+                mood=mood_data,
                 trajectory=data.get("trajectory", "unknown"),
             )
         except (json.JSONDecodeError, KeyError, IndexError):
             # Fallback if parsing fails
             result = AnalysisResult(
                 topics=["parsing_error"],
-                mood="unknown",
+                mood=["unknown"],
                 trajectory="unknown",
             )
 

@@ -160,10 +160,16 @@ class ConversationStorage:
         self,
         conversation_id: str,
         topics: list[str],
-        mood: str,
+        mood: str | list[str],
         trajectory: str,
     ) -> None:
         """Save analysis results for a conversation."""
+        # Store mood as JSON list (handle both old string and new list format)
+        if isinstance(mood, str):
+            mood_json = json.dumps([mood])
+        else:
+            mood_json = json.dumps(mood)
+
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 INSERT OR REPLACE INTO analysis_results
@@ -172,7 +178,7 @@ class ConversationStorage:
             """, (
                 conversation_id,
                 json.dumps(topics),
-                mood,
+                mood_json,
                 trajectory,
                 datetime.now(timezone.utc).isoformat(),
             ))
@@ -251,10 +257,40 @@ class ConversationStorage:
             for topic in all_topics:
                 topic_counts[topic] = topic_counts.get(topic, 0) + 1
 
+            # Parse aggregated moods (now stored as JSON arrays like topics)
+            all_moods_str = row["all_moods"] or ""
+            all_moods: list[str] = []
+            if all_moods_str:
+                # Same parsing logic as topics - find complete JSON arrays
+                depth = 0
+                current = ""
+                for char in all_moods_str:
+                    current += char
+                    if char == "[":
+                        depth += 1
+                    elif char == "]":
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                parsed = json.loads(current.strip().lstrip(","))
+                                if isinstance(parsed, list):
+                                    all_moods.extend(parsed)
+                            except json.JSONDecodeError:
+                                # Handle old string format (not JSON)
+                                clean = current.strip().lstrip(",").strip("[]\"")
+                                if clean:
+                                    all_moods.append(clean)
+                            current = ""
+                # Handle leftover (old format strings without brackets)
+                if current.strip():
+                    for m in current.split(","):
+                        m = m.strip()
+                        if m:
+                            all_moods.append(m)
+
             # Count mood frequencies
-            moods = [m for m in (row["all_moods"] or "").split(",") if m]
             mood_counts: dict[str, int] = {}
-            for mood in moods:
+            for mood in all_moods:
                 mood_counts[mood] = mood_counts.get(mood, 0) + 1
 
             results.append({
