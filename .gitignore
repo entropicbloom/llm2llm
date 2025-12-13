@@ -34,7 +34,6 @@ env/
 
 # LLM2LLM data directories
 data/
-conversations/
 
 # Environment variables
 .env
