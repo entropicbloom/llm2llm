@@ -3,7 +3,7 @@
 import json
 import sqlite3
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterator
 
 from .schemas import Conversation, ConversationStatus
@@ -174,7 +174,7 @@ class ConversationStorage:
                 json.dumps(topics),
                 mood,
                 trajectory,
-                datetime.utcnow().isoformat(),
+                datetime.now(timezone.utc).isoformat(),
             ))
             # Update conversation status
             conn.execute("""
@@ -221,10 +221,30 @@ class ConversationStorage:
 
         results = []
         for row in rows:
-            # Parse aggregated topics
+            # Parse aggregated topics (GROUP_CONCAT joins JSON arrays with commas)
+            # The data looks like: '["topic1","topic2"],["topic3"]' - need to parse carefully
             all_topics_str = row["all_topics"] or ""
-            topics_lists = [json.loads(t) for t in all_topics_str.split(",") if t]
-            all_topics = [topic for topics in topics_lists for topic in topics]
+            all_topics = []
+            # Split by ],[ to separate JSON arrays, then reconstruct and parse each
+            if all_topics_str:
+                # Try parsing the concatenated string - it's multiple JSON arrays joined by commas
+                # We need to find complete JSON arrays
+                depth = 0
+                current = ""
+                for char in all_topics_str:
+                    current += char
+                    if char == "[":
+                        depth += 1
+                    elif char == "]":
+                        depth -= 1
+                        if depth == 0:
+                            try:
+                                parsed = json.loads(current.strip().lstrip(","))
+                                if isinstance(parsed, list):
+                                    all_topics.extend(parsed)
+                            except json.JSONDecodeError:
+                                pass  # Skip malformed entries
+                            current = ""
 
             # Count topic frequencies
             topic_counts: dict[str, int] = {}

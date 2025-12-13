@@ -116,6 +116,11 @@ class ConversationEngine:
             # Get conversation history from this participant's perspective
             history = conversation.get_history_for_participant(role)
 
+            # Anthropic API requires at least one message
+            # For the first turn, add a simple starter prompt
+            if not history:
+                history = [{"role": "user", "content": "Please begin."}]
+
             # Generate response
             response = provider.generate(
                 model_id=model_id,

@@ -88,9 +88,15 @@ class ConversationAnalyzer:
             response_text = response.strip()
             # Handle case where response might have markdown code blocks
             if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0]
+                parts = response_text.split("```json")
+                if len(parts) > 1:
+                    inner_parts = parts[1].split("```")
+                    if inner_parts:
+                        response_text = inner_parts[0]
             elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0]
+                parts = response_text.split("```")
+                if len(parts) > 1:
+                    response_text = parts[1]
 
             data = json.loads(response_text)
 

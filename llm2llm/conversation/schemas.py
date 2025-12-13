@@ -1,6 +1,6 @@
 """Data schemas for conversations."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Literal
 from pydantic import BaseModel, Field
@@ -30,7 +30,7 @@ class Message(BaseModel):
     content: str
     model_id: str  # Which model generated this message
     participant_role: ParticipantRole  # initiator or responder
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     turn_number: int  # 1-indexed turn number
 
 
@@ -42,8 +42,8 @@ class Conversation(BaseModel):
     llm2_model: str  # Model ID for responder
     messages: list[Message] = Field(default_factory=list)
     status: ConversationStatus = ConversationStatus.ACTIVE
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def turn_count(self) -> int:
@@ -70,7 +70,7 @@ class Conversation(BaseModel):
             turn_number=len(self.messages) + 1,
         )
         self.messages.append(message)
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
         return message
 
     def get_history_for_participant(

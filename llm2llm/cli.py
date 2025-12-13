@@ -22,6 +22,32 @@ def get_config_and_storage() -> tuple[Config, ConversationStorage]:
     return config, storage
 
 
+def resolve_conversation_id(storage: ConversationStorage, partial_id: str) -> str:
+    """
+    Resolve a partial conversation ID to its full ID.
+
+    Raises click.Abort if no match or multiple matches found.
+    """
+    all_convs = storage.list_conversations(limit=1000)
+    matches = [c for c in all_convs if c["id"].startswith(partial_id)]
+
+    if not matches:
+        console.print(f"[red]No conversation found matching: {partial_id}[/red]")
+        raise click.Abort()
+    if len(matches) > 1:
+        console.print(f"[red]Multiple matches found. Please be more specific:[/red]")
+        for m in matches:
+            console.print(f"  {m['id']}")
+        raise click.Abort()
+
+    return matches[0]["id"]
+
+
+def _ensure_providers_registered():
+    """Ensure LLM providers are registered by importing them."""
+    from .models import AnthropicProvider  # noqa: F401
+
+
 @click.group()
 @click.version_option()
 def cli():
@@ -32,8 +58,7 @@ def cli():
 @cli.command()
 def models():
     """List all available models."""
-    # Force registration by importing providers
-    from .models import AnthropicProvider  # noqa: F401
+    _ensure_providers_registered()
 
     all_models = BaseLLMProvider.get_all_models()
 
@@ -47,13 +72,12 @@ def models():
 
 
 @cli.command()
-@click.option("--llm1", required=True, help="Model ID for the initiator (LLM1)")
-@click.option("--llm2", required=True, help="Model ID for the responder (LLM2)")
+@click.option("--llm1", required=True, help="Model ID for the initiator")
+@click.option("--llm2", required=True, help="Model ID for the responder")
 @click.option("--turns", default=DEFAULT_TURNS, help=f"Number of turns (default: {DEFAULT_TURNS})")
 def run(llm1: str, llm2: str, turns: int):
     """Run a new conversation between two LLMs."""
-    # Force provider registration
-    from .models import AnthropicProvider  # noqa: F401
+    _ensure_providers_registered()
 
     config, storage = get_config_and_storage()
     engine = ConversationEngine(config, storage)
@@ -89,8 +113,7 @@ def run(llm1: str, llm2: str, turns: int):
 @click.option("--turns", default=DEFAULT_TURNS, help=f"Turns per conversation (default: {DEFAULT_TURNS})")
 def batch(llm1: str, llm2: str, count: int, turns: int):
     """Run multiple conversations for the same LLM pair."""
-    # Force provider registration
-    from .models import AnthropicProvider  # noqa: F401
+    _ensure_providers_registered()
 
     config, storage = get_config_and_storage()
     engine = ConversationEngine(config, storage)
@@ -187,26 +210,12 @@ def list_conversations(llm1: str | None, llm2: str | None, status: str | None, l
 @click.option("--turns", default=10, help="Number of additional turns")
 def continue_conversation(conversation_id: str, turns: int):
     """Continue an existing conversation."""
-    # Force provider registration
-    from .models import AnthropicProvider  # noqa: F401
+    _ensure_providers_registered()
 
     config, storage = get_config_and_storage()
     engine = ConversationEngine(config, storage)
 
-    # Support partial ID matching
-    all_convs = storage.list_conversations(limit=1000)
-    matches = [c for c in all_convs if c["id"].startswith(conversation_id)]
-
-    if not matches:
-        console.print(f"[red]No conversation found matching: {conversation_id}[/red]")
-        raise click.Abort()
-    if len(matches) > 1:
-        console.print(f"[red]Multiple matches found. Please be more specific:[/red]")
-        for m in matches:
-            console.print(f"  {m['id']}")
-        raise click.Abort()
-
-    full_id = matches[0]["id"]
+    full_id = resolve_conversation_id(storage, conversation_id)
     console.print(f"\n[bold]Continuing conversation[/bold]: {full_id}")
     console.print(f"  Additional turns: {turns}\n")
 
@@ -236,20 +245,7 @@ def view(conversation_id: str, tail: int | None):
     """View a conversation."""
     config, storage = get_config_and_storage()
 
-    # Support partial ID matching
-    all_convs = storage.list_conversations(limit=1000)
-    matches = [c for c in all_convs if c["id"].startswith(conversation_id)]
-
-    if not matches:
-        console.print(f"[red]No conversation found matching: {conversation_id}[/red]")
-        raise click.Abort()
-    if len(matches) > 1:
-        console.print(f"[red]Multiple matches found:[/red]")
-        for m in matches:
-            console.print(f"  {m['id']}")
-        raise click.Abort()
-
-    full_id = matches[0]["id"]
+    full_id = resolve_conversation_id(storage, conversation_id)
     conversation = storage.load(full_id)
 
     if not conversation:
@@ -286,8 +282,7 @@ def view(conversation_id: str, tail: int | None):
 @click.option("--model", default=None, help="Model to use for analysis (default: claude-3-5-haiku-20241022)")
 def analyze(llm1: str | None, llm2: str | None, model: str | None):
     """Analyze conversation endings for topics and mood."""
-    # Force provider registration
-    from .models import AnthropicProvider  # noqa: F401
+    _ensure_providers_registered()
     from .analysis import ConversationAnalyzer
 
     config, storage = get_config_and_storage()
@@ -332,20 +327,7 @@ def annotate(conversation_id: str, topics: str, mood: str, trajectory: str):
     """Manually annotate a conversation with analysis."""
     config, storage = get_config_and_storage()
 
-    # Support partial ID matching
-    all_convs = storage.list_conversations(limit=1000)
-    matches = [c for c in all_convs if c["id"].startswith(conversation_id)]
-
-    if not matches:
-        console.print(f"[red]No conversation found matching: {conversation_id}[/red]")
-        raise click.Abort()
-    if len(matches) > 1:
-        console.print(f"[red]Multiple matches found:[/red]")
-        for m in matches:
-            console.print(f"  {m['id']}")
-        raise click.Abort()
-
-    full_id = matches[0]["id"]
+    full_id = resolve_conversation_id(storage, conversation_id)
 
     # Parse topics
     topics_list = [t.strip() for t in topics.split(",") if t.strip()]
@@ -402,20 +384,7 @@ def delete(conversation_id: str):
     """Delete a conversation."""
     config, storage = get_config_and_storage()
 
-    # Support partial ID matching
-    all_convs = storage.list_conversations(limit=1000)
-    matches = [c for c in all_convs if c["id"].startswith(conversation_id)]
-
-    if not matches:
-        console.print(f"[red]No conversation found matching: {conversation_id}[/red]")
-        raise click.Abort()
-    if len(matches) > 1:
-        console.print(f"[red]Multiple matches found:[/red]")
-        for m in matches:
-            console.print(f"  {m['id']}")
-        raise click.Abort()
-
-    full_id = matches[0]["id"]
+    full_id = resolve_conversation_id(storage, conversation_id)
     if storage.delete(full_id):
         console.print(f"[green]Deleted conversation: {full_id}[/green]")
     else:
