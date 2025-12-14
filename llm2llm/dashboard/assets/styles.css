@@ -628,3 +628,133 @@ nav {
     color: var(--text-muted);
     line-height: 1.5;
 }
+
+/* Dynamic type colors */
+.insight-card.dynamic-compassion {
+    border-left: 4px solid #e57373;
+}
+
+.insight-card.dynamic-co-discovery {
+    border-left: 4px solid var(--accent);
+}
+
+.insight-card.dynamic-world-building {
+    border-left: 4px solid var(--purple);
+}
+
+.insight-card.dynamic-asymmetry {
+    border-left: 4px solid var(--orange);
+}
+
+.insight-card.dynamic-mirroring {
+    border-left: 4px solid var(--teal);
+}
+
+.insight-card.dynamic-tension {
+    border-left: 4px solid var(--green);
+}
+
+.insight-card-description {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.excerpt-container {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.excerpt-turn {
+    margin-bottom: 12px;
+    line-height: 1.6;
+}
+
+.excerpt-turn:last-child {
+    margin-bottom: 0;
+}
+
+.excerpt-speaker {
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 8px;
+}
+
+.excerpt-text {
+    color: var(--text);
+    font-style: italic;
+}
+
+.insight-analysis {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.pattern-card {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 16px;
+    border-left: 3px solid var(--accent);
+}
+
+.pattern-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 8px;
+}
+
+.pattern-description {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.model-diff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.model-diff-card {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.model-diff-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+}
+
+.model-diff-traits {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.model-diff-traits li {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+.model-diff-traits li:last-child {
+    margin-bottom: 0;
+}

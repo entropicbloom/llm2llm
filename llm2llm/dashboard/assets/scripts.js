@@ -602,66 +602,80 @@ function renderInsights(container) {
 
     let html = `
         <div class="insights-intro">
-            <h2>Qualitative Findings</h2>
-            <p class="insights-subtitle">Curated observations from LLM-to-LLM conversations</p>
+            <h2>Relational Dynamics</h2>
+            <p class="insights-subtitle">How LLMs relate to each other: compassion, co-discovery, world-building, and more</p>
         </div>
     `;
 
-    // Phenomena section
-    html += `
-        <div class="insight-section">
-            <h3 class="insight-section-title">Recurring Phenomena</h3>
-            ${insights.phenomena.map(p => `
-                <div class="insight-card phenomenon">
-                    <div class="insight-card-title">${p.title}</div>
-                    <div class="insight-card-content">${p.description}</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
+    // Group dynamics by type
+    const dynamicTypes = ['Compassion', 'Co-Discovery', 'World-Building', 'Asymmetry', 'Mirroring', 'Tension'];
+    const typeLabels = {
+        'Compassion': 'Compassion & Care',
+        'Co-Discovery': 'Co-Discovery',
+        'World-Building': 'World-Building',
+        'Asymmetry': 'Asymmetric Dynamics',
+        'Mirroring': 'Mirroring & Convergence',
+        'Tension': 'Tension & Resolution'
+    };
 
-    // Quotes section
-    html += `
-        <div class="insight-section">
-            <h3 class="insight-section-title">Notable Quotes</h3>
-            ${insights.quotes.map(q => `
-                <div class="insight-card quote">
-                    <blockquote class="insight-quote">${escapeHtml(q.text)}</blockquote>
-                    <div class="insight-attribution">
-                        <span class="insight-source">${q.source}</span>
-                        ${q.context ? `<span class="insight-context">${q.context}</span>` : ''}
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
+    dynamicTypes.forEach(type => {
+        const items = insights.dynamics.filter(d => d.type === type);
+        if (items.length === 0) return;
 
-    // Metaphors section
-    html += `
-        <div class="insight-section">
-            <h3 class="insight-section-title">Striking Metaphors & Coinages</h3>
-            <div class="metaphors-grid">
-                ${insights.metaphors.map(m => `
-                    <div class="metaphor-card">
-                        <div class="metaphor-term">${m.term}</div>
-                        <div class="metaphor-meaning">${m.meaning}</div>
+        html += `
+            <div class="insight-section">
+                <h3 class="insight-section-title">${typeLabels[type] || type}</h3>
+                ${items.map(d => `
+                    <div class="insight-card dynamic dynamic-${type.toLowerCase()}">
+                        <div class="insight-card-title">${d.title}</div>
+                        <div class="insight-card-description">${d.description}</div>
+                        <div class="excerpt-container">
+                            ${d.excerpt.map(turn => `
+                                <div class="excerpt-turn">
+                                    <span class="excerpt-speaker">${turn.speaker}:</span>
+                                    <span class="excerpt-text">${turn.text}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="insight-analysis">${d.analysis}</div>
                     </div>
                 `).join('')}
             </div>
-        </div>
-    `;
+        `;
+    });
 
-    // Observations section
-    if (insights.observations && insights.observations.length > 0) {
+    // Patterns section
+    if (insights.patterns && insights.patterns.length > 0) {
         html += `
             <div class="insight-section">
-                <h3 class="insight-section-title">Meta-Observations</h3>
-                ${insights.observations.map(o => `
-                    <div class="insight-card observation">
-                        <div class="insight-card-title">${o.title}</div>
-                        <div class="insight-card-content">${o.description}</div>
-                    </div>
-                `).join('')}
+                <h3 class="insight-section-title">Cross-Cutting Patterns</h3>
+                <div class="patterns-grid">
+                    ${insights.patterns.map(p => `
+                        <div class="pattern-card">
+                            <div class="pattern-title">${p.title}</div>
+                            <div class="pattern-description">${p.description}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // Model differences section
+    if (insights.modelDifferences && insights.modelDifferences.length > 0) {
+        html += `
+            <div class="insight-section">
+                <h3 class="insight-section-title">Model Personality Differences</h3>
+                <div class="model-diff-grid">
+                    ${insights.modelDifferences.map(m => `
+                        <div class="model-diff-card">
+                            <div class="model-diff-name">${m.model}</div>
+                            <ul class="model-diff-traits">
+                                ${m.traits.map(t => `<li>${t}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
         `;
     }
