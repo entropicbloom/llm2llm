@@ -688,6 +688,26 @@ nav {
     font-style: italic;
 }
 
+.excerpt-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.excerpt-link:hover {
+    text-decoration: underline;
+}
+
+.message.highlighted {
+    background: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid var(--accent);
+    margin-left: -3px;
+}
+
 .insight-analysis {
     font-size: 13px;
     color: var(--text-muted);

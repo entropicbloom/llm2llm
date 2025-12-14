@@ -97,7 +97,7 @@ function closeModal() {
     document.getElementById('modal').classList.add('hidden');
 }
 
-function openConversation(convId) {
+function openConversation(convId, scrollToTurn = null) {
     const modal = document.getElementById('modal');
     const body = document.getElementById('modal-body');
 
@@ -156,8 +156,9 @@ function openConversation(convId) {
         const role = msg.participant_role || 'unknown';
         const roleClass = role === 'initiator' ? 'initiator' : 'responder';
         const roleLabel = role === 'initiator' ? 'LLM1' : 'LLM2';
+        const isHighlighted = scrollToTurn && msg.turn_number >= scrollToTurn && msg.turn_number < scrollToTurn + 5;
         html += `
-            <div class="message ${roleClass}">
+            <div class="message ${roleClass}${isHighlighted ? ' highlighted' : ''}" id="turn-${msg.turn_number}" data-turn="${msg.turn_number}">
                 <div class="message-header">Turn ${msg.turn_number} - ${roleLabel}</div>
                 <div class="message-content">${escapeHtml(msg.content)}</div>
             </div>
@@ -167,6 +168,16 @@ function openConversation(convId) {
     html += '</div>';
     body.innerHTML = html;
     modal.classList.remove('hidden');
+
+    // Scroll to the specific turn if provided
+    if (scrollToTurn) {
+        setTimeout(() => {
+            const turnEl = document.getElementById(`turn-${scrollToTurn}`);
+            if (turnEl) {
+                turnEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
+    }
 }
 
 function render() {
@@ -636,6 +647,11 @@ function renderInsights(container) {
                                     <span class="excerpt-text">${turn.text}</span>
                                 </div>
                             `).join('')}
+                            ${d.conversationId ? `
+                                <a class="excerpt-link" onclick="openConversation('${d.conversationId}', ${d.turnStart || 1})">
+                                    View in context &rarr;
+                                </a>
+                            ` : ''}
                         </div>
                         <div class="insight-analysis">${d.analysis}</div>
                     </div>
