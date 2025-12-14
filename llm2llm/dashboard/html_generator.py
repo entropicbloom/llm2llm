@@ -200,8 +200,8 @@ header {
 }
 
 .logo {
-    width: 96px;
-    height: 96px;
+    width: 120px;
+    height: 120px;
     object-fit: contain;
 }
 
