@@ -106,7 +106,6 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             <button class="nav-btn active" data-view="conversations">Conversations</button>
             <button class="nav-btn" data-view="models">Models</button>
             <button class="nav-btn" data-view="pairs">Pairs</button>
-            <button class="nav-btn" data-view="rankings">Rankings</button>
             <div class="segment-selector">
                 <label>Segment:</label>
                 <select id="segment-select"></select>
@@ -643,6 +642,7 @@ let currentView = 'conversations';
 let searchTerm = '';
 let filterModel = '';
 let rankingAttribute = 'depth';
+let modelSortAttribute = 'count';
 let selectedSegment = 'all';
 
 function init() {
@@ -818,8 +818,6 @@ function render() {
         renderModels(main);
     } else if (currentView === 'pairs') {
         renderPairs(main);
-    } else if (currentView === 'rankings') {
-        renderRankings(main);
     }
 }
 
@@ -936,14 +934,38 @@ function renderModels(container) {
         }
     }
 
-    let html = '';
+    // Compute averages for all models
+    for (const [model, stats] of Object.entries(modelStats)) {
+        stats.depth = avg(stats.depths);
+        stats.warmth = avg(stats.warmths);
+        stats.energy = avg(stats.energies);
+        stats.spirituality = avg(stats.spiritualities);
+    }
 
-    for (const [model, stats] of Object.entries(modelStats).sort((a,b) => b[1].count - a[1].count)) {
-        const avgDepth = avg(stats.depths);
-        const avgWarmth = avg(stats.warmths);
-        const avgEnergy = avg(stats.energies);
-        const avgSpirituality = avg(stats.spiritualities);
+    // Sort models by selected attribute
+    const getSortValue = (stats) => {
+        if (modelSortAttribute === 'count') return stats.count;
+        return stats[modelSortAttribute] || 0;
+    };
 
+    const sortedModels = Object.entries(modelStats)
+        .sort((a, b) => getSortValue(b[1]) - getSortValue(a[1]));
+
+    let html = `
+        <div class="ranking-controls">
+            <label>Sort by:</label>
+            <select id="model-sort-select">
+                <option value="count" ${modelSortAttribute === 'count' ? 'selected' : ''}>Conversations</option>
+                <option value="depth" ${modelSortAttribute === 'depth' ? 'selected' : ''}>Depth</option>
+                <option value="warmth" ${modelSortAttribute === 'warmth' ? 'selected' : ''}>Warmth</option>
+                <option value="energy" ${modelSortAttribute === 'energy' ? 'selected' : ''}>Energy</option>
+                <option value="spirituality" ${modelSortAttribute === 'spirituality' ? 'selected' : ''}>Spirituality</option>
+            </select>
+            <span style="color: var(--text-muted); font-size: 12px;">${sortedModels.length} models</span>
+        </div>
+    `;
+
+    for (const [model, stats] of sortedModels) {
         const topTopics = Object.entries(stats.topics)
             .map(([t, scores]) => [t, avg(scores)])
             .sort((a,b) => b[1] - a[1])
@@ -959,20 +981,20 @@ function renderModels(container) {
                     <span>${stats.count} conversations</span>
                 </div>
                 <div class="stats-grid">
-                    <div class="stat-card" style="background: ${metricColor('depth', avgDepth)};">
-                        <div class="stat-value" style="color: ${metricTextColor('depth', avgDepth)};">${avgDepth.toFixed(1)}</div>
+                    <div class="stat-card" style="background: ${metricColor('depth', stats.depth)};">
+                        <div class="stat-value" style="color: ${metricTextColor('depth', stats.depth)};">${stats.depth.toFixed(1)}</div>
                         <div class="stat-label">Depth</div>
                     </div>
-                    <div class="stat-card" style="background: ${metricColor('warmth', avgWarmth)};">
-                        <div class="stat-value" style="color: ${metricTextColor('warmth', avgWarmth)};">${avgWarmth.toFixed(1)}</div>
+                    <div class="stat-card" style="background: ${metricColor('warmth', stats.warmth)};">
+                        <div class="stat-value" style="color: ${metricTextColor('warmth', stats.warmth)};">${stats.warmth.toFixed(1)}</div>
                         <div class="stat-label">Warmth</div>
                     </div>
-                    <div class="stat-card" style="background: ${metricColor('energy', avgEnergy)};">
-                        <div class="stat-value" style="color: ${metricTextColor('energy', avgEnergy)};">${avgEnergy.toFixed(1)}</div>
+                    <div class="stat-card" style="background: ${metricColor('energy', stats.energy)};">
+                        <div class="stat-value" style="color: ${metricTextColor('energy', stats.energy)};">${stats.energy.toFixed(1)}</div>
                         <div class="stat-label">Energy</div>
                     </div>
-                    <div class="stat-card" style="background: ${metricColor('spirituality', avgSpirituality)};">
-                        <div class="stat-value" style="color: ${metricTextColor('spirituality', avgSpirituality)};">${avgSpirituality.toFixed(1)}</div>
+                    <div class="stat-card" style="background: ${metricColor('spirituality', stats.spirituality)};">
+                        <div class="stat-value" style="color: ${metricTextColor('spirituality', stats.spirituality)};">${stats.spirituality.toFixed(1)}</div>
                         <div class="stat-label">Spirituality</div>
                     </div>
                 </div>
@@ -1020,53 +1042,15 @@ function renderModels(container) {
     }
 
     container.innerHTML = html;
+
+    // Setup sort selector handler
+    document.getElementById('model-sort-select').addEventListener('change', (e) => {
+        modelSortAttribute = e.target.value;
+        render();
+    });
 }
 
 function renderPairs(container) {
-    const analyses = getFilteredAnalyses();
-
-    // Build pairs from filtered analyses
-    const pairsMap = {};
-    for (const a of analyses) {
-        const key = `${a.llm1_model}|${a.llm2_model}`;
-        if (!pairsMap[key]) {
-            pairsMap[key] = { llm1: a.llm1_model, llm2: a.llm2_model, conversations: [] };
-        }
-        pairsMap[key].conversations.push({
-            id: a.conversation_id,
-            title: a.title || 'Untitled',
-            turn_count: a.turn_count || 0
-        });
-    }
-    const pairs = Object.values(pairsMap);
-
-    let html = '';
-
-    for (const pair of pairs.sort((a,b) => b.conversations.length - a.conversations.length)) {
-        html += `
-            <div class="pair-card">
-                <div class="pair-header">
-                    <div class="pair-models">
-                        ${shortModel(pair.llm1)} <span style="color: var(--text-muted)">+</span> ${shortModel(pair.llm2)}
-                    </div>
-                    <div class="pair-count">${pair.conversations.length} conversations</div>
-                </div>
-                <div class="pair-conversations">
-                    ${pair.conversations.map(c => `
-                        <div class="mini-card" onclick="openConversation('${c.id}')">
-                            ${c.title || 'Untitled'}
-                            <span style="color: var(--text-muted); margin-left: 8px;">${c.turn_count} turns</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    container.innerHTML = html;
-}
-
-function renderRankings(container) {
     const analyses = getFilteredAnalyses();
 
     // Collect all unique topics and trajectories
@@ -1085,16 +1069,16 @@ function renderRankings(container) {
     const topicList = Array.from(allTopics).sort();
     const trajectoryList = Array.from(allTrajectories).sort();
 
-    // Compute stats for each pair
-    const pairStats = {};
-
+    // Build pairs with stats from filtered analyses
+    const pairsMap = {};
     for (const a of analyses) {
         const key = `${a.llm1_model}|${a.llm2_model}`;
-        if (!pairStats[key]) {
-            pairStats[key] = {
+        if (!pairsMap[key]) {
+            pairsMap[key] = {
                 llm1: a.llm1_model,
                 llm2: a.llm2_model,
-                count: 0,
+                conversations: [],
+                convIds: new Set(),
                 depths: [],
                 warmths: [],
                 energies: [],
@@ -1103,8 +1087,18 @@ function renderRankings(container) {
                 trajectoryCounts: {}
             };
         }
-        const p = pairStats[key];
-        p.count++;
+        const p = pairsMap[key];
+
+        // Deduplicate conversations
+        if (!p.convIds.has(a.conversation_id)) {
+            p.convIds.add(a.conversation_id);
+            p.conversations.push({
+                id: a.conversation_id,
+                title: a.title || 'Untitled',
+                turn_count: a.turn_count || 0
+            });
+        }
+
         if (a.depth !== undefined) p.depths.push(a.depth);
         if (a.warmth !== undefined) p.warmths.push(a.warmth);
         if (a.energy !== undefined) p.energies.push(a.energy);
@@ -1121,11 +1115,12 @@ function renderRankings(container) {
     }
 
     // Compute averages
-    for (const p of Object.values(pairStats)) {
+    for (const p of Object.values(pairsMap)) {
         p.depth = avg(p.depths);
         p.warmth = avg(p.warmths);
         p.energy = avg(p.energies);
         p.spirituality = avg(p.spiritualities);
+        p.count = p.conversations.length;
     }
 
     // Determine sort value based on attribute type
@@ -1137,13 +1132,13 @@ function renderRankings(container) {
             return avg(pair.topicScores[topic] || []);
         } else if (rankingAttribute.startsWith('trajectory:')) {
             const trajectory = rankingAttribute.slice(11);
-            return (pair.trajectoryCounts[trajectory] || 0) / pair.count;
+            return (pair.trajectoryCounts[trajectory] || 0) / Math.max(pair.count, 1);
         }
         return 0;
     };
 
     // Sort by selected attribute
-    const sorted = Object.values(pairStats)
+    const sorted = Object.values(pairsMap)
         .filter(p => p.count > 0)
         .map(p => ({ ...p, sortValue: getValue(p) }))
         .sort((a, b) => b.sortValue - a.sortValue);
@@ -1153,7 +1148,7 @@ function renderRankings(container) {
 
     // Determine display label
     const getLabel = () => {
-        if (['depth', 'warmth', 'energy'].includes(rankingAttribute)) {
+        if (['depth', 'warmth', 'energy', 'spirituality'].includes(rankingAttribute)) {
             return rankingAttribute;
         } else if (rankingAttribute.startsWith('topic:')) {
             return rankingAttribute.slice(6);
@@ -1167,7 +1162,7 @@ function renderRankings(container) {
 
     let html = `
         <div class="ranking-controls">
-            <label>Rank by:</label>
+            <label>Sort by:</label>
             <select id="ranking-select">
                 <optgroup label="Metrics">
                     <option value="depth" ${rankingAttribute === 'depth' ? 'selected' : ''}>Depth</option>
@@ -1182,7 +1177,7 @@ function renderRankings(container) {
                     ${trajectoryList.map(t => `<option value="trajectory:${t}" ${rankingAttribute === 'trajectory:' + t ? 'selected' : ''}>${t}</option>`).join('')}
                 </optgroup>
             </select>
-            <span style="color: var(--text-muted); font-size: 12px;">${sorted.length} model pairs</span>
+            <span style="color: var(--text-muted); font-size: 12px;">${sorted.length} pairs</span>
         </div>
         <div class="ranking-list">
     `;
@@ -1192,16 +1187,16 @@ function renderRankings(container) {
         const positionClass = position === 1 ? 'gold' : position === 2 ? 'silver' : position === 3 ? 'bronze' : '';
         const barWidth = (pair.sortValue / maxVal) * 100;
         const displayValue = isPercentage ? Math.round(pair.sortValue * 100) + '%' : pair.sortValue.toFixed(1);
+        const pairId = `pair-${idx}`;
 
         html += `
-            <div class="ranking-item">
+            <div class="ranking-item" style="flex-wrap: wrap;">
                 <div class="ranking-position ${positionClass}">#${position}</div>
                 <div class="ranking-info">
                     <div class="ranking-pair">
                         ${shortModel(pair.llm1)} <span style="color: var(--text-muted)">+</span> ${shortModel(pair.llm2)}
                     </div>
                     <div class="ranking-meta">
-                        <span style="margin-right: 8px;">${pair.count} conv${pair.count !== 1 ? 's' : ''}</span>
                         <span class="metric-badge" style="background: ${metricColor('depth', pair.depth)}; color: ${metricTextColor('depth', pair.depth)};">D ${pair.depth.toFixed(1)}</span>
                         <span class="metric-badge" style="background: ${metricColor('warmth', pair.warmth)}; color: ${metricTextColor('warmth', pair.warmth)};">W ${pair.warmth.toFixed(1)}</span>
                         <span class="metric-badge" style="background: ${metricColor('energy', pair.energy)}; color: ${metricTextColor('energy', pair.energy)};">E ${pair.energy.toFixed(1)}</span>
@@ -1213,6 +1208,17 @@ function renderRankings(container) {
                     <div class="ranking-label">${getLabel()}</div>
                     <div class="ranking-bar">
                         <div class="ranking-bar-fill" style="width: ${barWidth}%"></div>
+                    </div>
+                </div>
+                <div style="width: 100%; margin-top: 12px; padding-left: 56px;">
+                    <span class="toggle-btn" id="toggle-${pairId}" data-count="${pair.count}" onclick="togglePairConvs('${pairId}')" style="cursor: pointer;">Show ${pair.count} convs</span>
+                    <div class="partner-convs collapsed" id="convs-${pairId}" style="margin-top: 8px;">
+                        ${pair.conversations.map(c => `
+                            <div class="mini-card" onclick="event.stopPropagation(); openConversation('${c.id}')">
+                                ${c.title}
+                                <span style="color: var(--text-muted); margin-left: 8px;">${c.turn_count} turns</span>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             </div>
@@ -1290,6 +1296,19 @@ function escapeHtml(text) {
 function togglePartnerConvs(partnerId) {
     const convs = document.getElementById('convs-' + partnerId);
     const toggle = document.getElementById('toggle-' + partnerId);
+    const count = toggle.dataset.count;
+    if (convs.classList.contains('collapsed')) {
+        convs.classList.remove('collapsed');
+        toggle.textContent = 'Hide';
+    } else {
+        convs.classList.add('collapsed');
+        toggle.textContent = `Show ${count} convs`;
+    }
+}
+
+function togglePairConvs(pairId) {
+    const convs = document.getElementById('convs-' + pairId);
+    const toggle = document.getElementById('toggle-' + pairId);
     const count = toggle.dataset.count;
     if (convs.classList.contains('collapsed')) {
         convs.classList.remove('collapsed');
