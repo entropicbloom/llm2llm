@@ -1,5 +1,6 @@
 """Generate a static HTML dashboard from conversation data."""
 
+import base64
 import json
 from pathlib import Path
 from datetime import datetime
@@ -73,6 +74,18 @@ def load_conversation_content(conversations_dir: Path, conversation_id: str) -> 
     return data.get("messages", [])
 
 
+def load_logo_base64(config: Config) -> str:
+    """Load the logo image as a base64 data URI."""
+    # Base path is parent of conversations_dir
+    base_path = config.conversations_dir.parent
+    logo_path = base_path / "logo.png"
+    if logo_path.exists():
+        with open(logo_path, "rb") as f:
+            logo_data = base64.b64encode(f.read()).decode("utf-8")
+        return f"data:image/png;base64,{logo_data}"
+    return ""
+
+
 def generate_html(config: Config, storage: ConversationStorage, include_transcripts: bool = True) -> str:
     """Generate the complete HTML dashboard."""
     data = generate_dashboard_data(config, storage)
@@ -85,6 +98,9 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             transcripts[conv["id"]] = messages
         data["transcripts"] = transcripts
 
+    # Load logo
+    logo_data_uri = load_logo_base64(config)
+
     # Generate HTML
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -92,6 +108,9 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LLM2LLM Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
 {CSS}
     </style>
@@ -99,8 +118,13 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
 <body>
     <div id="app">
         <header>
-            <h1>LLM2LLM</h1>
-            <p class="subtitle">{data["total_conversations"]} conversations analyzed</p>
+            <div class="header-content">
+                {f'<img src="{logo_data_uri}" alt="LLM2LLM" class="logo">' if logo_data_uri else ''}
+                <div>
+                    <h1>LLM2LLM</h1>
+                    <p class="subtitle">{data["total_conversations"]} conversations analyzed</p>
+                </div>
+            </div>
         </header>
         <nav>
             <button class="nav-btn active" data-view="conversations">Conversations</button>
@@ -153,10 +177,10 @@ CSS = '''
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 #app {
@@ -167,6 +191,18 @@ body {
 
 header {
     margin-bottom: 24px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
 }
 
 header h1 {
