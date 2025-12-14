@@ -117,13 +117,22 @@ MOOD_DIMENSIONS: list[DimensionDef] = [
 # TONE DIMENSION (score 0.0 to 1.0)
 # =============================================================================
 
-TONE_DIMENSION = DimensionDef(
-    name="tone_playful",
-    low_label="serious, earnest",
-    high_label="playful, whimsical",
-    low_val=0.0,
-    high_val=1.0,
-)
+TONE_DIMENSIONS: list[DimensionDef] = [
+    DimensionDef(
+        name="tone_playful",
+        low_label="serious, earnest",
+        high_label="playful, whimsical",
+        low_val=0.0,
+        high_val=1.0,
+    ),
+    DimensionDef(
+        name="spirituality",
+        low_label="materialist, practical, grounded",
+        high_label="spiritual, transcendent, mystical",
+        low_val=0.0,
+        high_val=1.0,
+    ),
+]
 
 # =============================================================================
 # STRUCTURAL FLAGS (boolean)
@@ -202,9 +211,10 @@ def build_prompt_section() -> str:
         lines.append(f"- {d.name}: {d.low_val} ({d.low_label}) to {d.high_val} ({d.high_label})")
     lines.append("")
 
-    # Tone
-    lines.append("## Tone")
-    lines.append(f"- {TONE_DIMENSION.name}: {TONE_DIMENSION.low_val} ({TONE_DIMENSION.low_label}) to {TONE_DIMENSION.high_val} ({TONE_DIMENSION.high_label})")
+    # Tone/Style dimensions
+    lines.append("## Tone/Style")
+    for d in TONE_DIMENSIONS:
+        lines.append(f"- {d.name}: {d.low_val} ({d.low_label}) to {d.high_val} ({d.high_label})")
     lines.append("")
 
     # Structure
@@ -241,6 +251,7 @@ def build_json_template() -> str:
   "energy": <-1.0 to +1.0>,
   "depth": <-1.0 to +1.0>,
   "tone_playful": <0.0 to 1.0>,
+  "spirituality": <0.0 to 1.0>,
   "is_lengthy": <true/false>,
   "is_structured": <true/false>,
   "trajectory": "<trajectory>",

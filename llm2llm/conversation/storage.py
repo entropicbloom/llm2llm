@@ -199,19 +199,24 @@ class ConversationStorage:
         self,
         llm1_model: str | None = None,
         llm2_model: str | None = None,
+        segment_start: int = -5,
+        segment_end: int | None = None,
     ) -> Iterator[Conversation]:
         """
-        Get conversations that need analysis (completed but not analyzed).
+        Get conversations that need analysis for a specific segment.
 
-        Yields full Conversation objects.
+        Yields full Conversation objects that don't have analysis for the given segment.
         """
+        # Check for specific segment, not just any analysis
         query = """
             SELECT c.id FROM conversations c
             LEFT JOIN analysis_results a ON c.id = a.conversation_id
+                AND a.segment_start = ?
+                AND (a.segment_end IS ? OR (a.segment_end IS NOT NULL AND a.segment_end = ?))
             WHERE a.conversation_id IS NULL
-            AND c.status IN ('completed', 'paused')
+            AND c.status IN ('completed', 'paused', 'analyzed')
         """
-        params: list = []
+        params: list = [segment_start, segment_end, segment_end]
 
         if llm1_model:
             query += " AND c.llm1_model = ?"
@@ -400,6 +405,32 @@ class ConversationStorage:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("DELETE FROM analysis_results WHERE conversation_id = ?", (conversation_id,))
             conn.commit()
+
+    def save_title(self, conversation_id: str, title: str) -> None:
+        """Save a title for a conversation."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "UPDATE conversations SET title = ? WHERE id = ?",
+                (title, conversation_id),
+            )
+            conn.commit()
+
+    def get_title(self, conversation_id: str) -> str | None:
+        """Get the title for a conversation."""
+        with sqlite3.connect(self.db_path) as conn:
+            row = conn.execute(
+                "SELECT title FROM conversations WHERE id = ?",
+                (conversation_id,),
+            ).fetchone()
+            return row[0] if row else None
+
+    def get_conversations_without_titles(self) -> list[str]:
+        """Get IDs of conversations that don't have titles yet."""
+        with sqlite3.connect(self.db_path) as conn:
+            rows = conn.execute(
+                "SELECT id FROM conversations WHERE title IS NULL"
+            ).fetchall()
+            return [row[0] for row in rows]
 
     def delete(self, conversation_id: str) -> bool:
         """Delete a conversation and its analysis."""

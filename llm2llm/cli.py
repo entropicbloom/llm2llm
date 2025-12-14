@@ -292,7 +292,7 @@ def analyze(llm1: str | None, llm2: str | None, model: str | None, start: int, e
     config, storage = get_config_and_storage()
     analyzer = ConversationAnalyzer(config, storage, analysis_model=model)
 
-    conversations = list(storage.get_conversations_for_analysis(llm1, llm2))
+    conversations = list(storage.get_conversations_for_analysis(llm1, llm2, start, end))
 
     if not conversations:
         console.print("[dim]No conversations need analysis.[/dim]")
@@ -479,22 +479,61 @@ def delete(conversation_id: str):
 
 
 @cli.command()
-@click.option("--port", default=8501, type=int, help="Port to run the dashboard on")
-def dashboard(port: int):
-    """Launch the analysis dashboard in your browser."""
-    import subprocess
-    import sys
+@click.option("--model", default="claude-haiku-4-5-20251001", help="Model to use for title generation")
+def titles(model: str):
+    """Generate titles for conversations that don't have them."""
+    from .analysis.title_generator import generate_title
 
-    console.print(f"[bold]Starting dashboard on port {port}...[/bold]")
-    console.print(f"Open [link=http://localhost:{port}]http://localhost:{port}[/link] in your browser")
+    config, storage = get_config_and_storage()
 
-    app_path = Path(__file__).parent / "dashboard" / "app.py"
-    subprocess.run([
-        sys.executable, "-m", "streamlit", "run",
-        str(app_path),
-        "--server.port", str(port),
-        "--server.headless", "true",
-    ])
+    conversation_ids = storage.get_conversations_without_titles()
+
+    if not conversation_ids:
+        console.print("[dim]All conversations have titles.[/dim]")
+        return
+
+    console.print(f"\n[bold]Generating titles for {len(conversation_ids)} conversations[/bold]\n")
+
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+    ) as progress:
+        for conv_id in conversation_ids:
+            task = progress.add_task(f"Titling {conv_id[:8]}...", total=None)
+            try:
+                conversation = storage.load(conv_id)
+                if not conversation:
+                    continue
+
+                messages = [{"role": m.participant_role.value, "content": m.content} for m in conversation.messages]
+                title = generate_title(messages, model=model)
+                storage.save_title(conv_id, title)
+                console.print(f"  [green]{conv_id[:8]}[/green]: {title}")
+            except Exception as e:
+                console.print(f"  [red]{conv_id[:8]}[/red]: {e}")
+            progress.remove_task(task)
+
+    console.print("\n[green]Done![/green]")
+
+
+@cli.command()
+@click.option("--output", "-o", default="dashboard.html", help="Output file path")
+@click.option("--open", "open_browser", is_flag=True, help="Open in browser after generating")
+def dashboard(output: str, open_browser: bool):
+    """Generate a static HTML dashboard."""
+    from .dashboard.html_generator import write_dashboard
+
+    config, storage = get_config_and_storage()
+    output_path = Path(output)
+
+    console.print(f"[bold]Generating dashboard...[/bold]")
+    write_dashboard(output_path, config, storage)
+    console.print(f"[green]Dashboard written to: {output_path.absolute()}[/green]")
+
+    if open_browser:
+        import webbrowser
+        webbrowser.open(f"file://{output_path.absolute()}")
 
 
 if __name__ == "__main__":

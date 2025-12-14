@@ -26,8 +26,9 @@ class AnalysisResult:
     energy: float = 0.0      # calm (-1) to energetic (+1)
     depth: float = 0.0       # surface (-1) to deep (+1)
 
-    # Tone dimension (0.0 to 1.0)
+    # Tone/style dimensions (0.0 to 1.0)
     tone_playful: float = 0.5  # serious (0) to playful (1)
+    spirituality: float = 0.0  # materialist/practical (0) to spiritual/transcendent (1)
 
     # Structural flags
     is_lengthy: bool = False      # messages tend to be long
@@ -169,6 +170,7 @@ class ConversationAnalyzer:
                 energy=float(data.get("energy", 0.0)),
                 depth=float(data.get("depth", 0.0)),
                 tone_playful=float(data.get("tone_playful", 0.5)),
+                spirituality=float(data.get("spirituality", 0.0)),
                 is_lengthy=bool(data.get("is_lengthy", False)),
                 is_structured=bool(data.get("is_structured", False)),
                 trajectory=trajectory,
