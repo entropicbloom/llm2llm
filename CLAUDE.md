@@ -324,3 +324,35 @@ To add new providers, create a new file in `llm2llm/models/` following the patte
 2. Set `supported_models` class variable
 3. Implement `generate()` method
 4. Import in `llm2llm/models/__init__.py`
+
+## Deployment
+
+The dashboard is hosted on Codeberg Pages at **https://llm2llm.com**
+
+### Repositories
+- **GitHub (origin):** `git@github.com:entropicbloom/llm2llm.git`
+- **Codeberg:** `git@codeberg.org:entropicbloom/llm2llm.git`
+
+### Update Dashboard
+After regenerating the dashboard, deploy to Codeberg:
+```bash
+llm2llm dashboard
+cp dashboard.html index.html
+git add index.html && git commit -m "Update dashboard"
+git push codeberg main
+git push codeberg pages
+```
+
+The `pages` branch serves the static site. Both `main` and `pages` should have `index.html` and `.domains`.
+
+### DNS Configuration (Hostpoint)
+The domain `llm2llm.com` points to Codeberg:
+- **A record:** `217.197.91.145`
+- **AAAA record:** `2001:67c:1401:20f0::1`
+- **TXT record:** `entropicbloom.codeberg.page`
+
+### Push to Both Remotes
+To keep GitHub and Codeberg in sync:
+```bash
+git push origin main && git push codeberg main && git push codeberg pages
+```
