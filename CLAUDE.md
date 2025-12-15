@@ -327,32 +327,30 @@ To add new providers, create a new file in `llm2llm/models/` following the patte
 
 ## Deployment
 
-The dashboard is hosted on Codeberg Pages at **https://llm2llm.com**
+The dashboard is hosted on GitHub Pages at **https://llm2llm.com**
 
 ### Repositories
 - **GitHub (origin):** `git@github.com:entropicbloom/llm2llm.git`
-- **Codeberg:** `git@codeberg.org:entropicbloom/llm2llm.git`
+- **Codeberg (mirror):** `git@codeberg.org:entropicbloom/llm2llm.git`
 
 ### Update Dashboard
-After regenerating the dashboard, deploy to Codeberg:
+After regenerating the dashboard, deploy to GitHub Pages:
 ```bash
 llm2llm dashboard
 cp dashboard.html index.html
 git add index.html && git commit -m "Update dashboard"
-git push codeberg main
-git push codeberg pages
+git push origin main
 ```
 
-The `pages` branch serves the static site. Both `main` and `pages` should have `index.html` and `.domains`.
+GitHub Pages serves from the `main` branch. The `CNAME` file configures the custom domain.
 
 ### DNS Configuration (Hostpoint)
-The domain `llm2llm.com` points to Codeberg:
-- **A record:** `217.197.91.145`
-- **AAAA record:** `2001:67c:1401:20f0::1`
-- **TXT record:** `entropicbloom.codeberg.page`
+The domain `llm2llm.com` points to GitHub Pages:
+- **A records:** `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+- **AAAA records:** `2606:50c0:8000::153`, `2606:50c0:8001::153`, `2606:50c0:8002::153`, `2606:50c0:8003::153`
 
 ### Push to Both Remotes
 To keep GitHub and Codeberg in sync:
 ```bash
-git push origin main && git push codeberg main && git push codeberg pages
+git push origin main && git push codeberg main
 ```
