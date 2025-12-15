@@ -106,9 +106,34 @@ SELECT * FROM analysis_results;
 SELECT c.id, c.llm1_model, c.llm2_model, c.turn_count, a.topics, a.mood, a.trajectory
 FROM conversations c
 LEFT JOIN analysis_results a ON c.id = a.conversation_id;
+
+-- Check analysis completeness (should show both segments for each conversation)
+SELECT c.id, c.llm1_model, c.llm2_model,
+       GROUP_CONCAT(a.segment_start || ':' || COALESCE(a.segment_end, 'end'), ', ') as segments
+FROM conversations c
+LEFT JOIN analysis_results a ON c.id = a.conversation_id
+WHERE c.status IN ('completed', 'paused', 'analyzed')
+GROUP BY c.id;
 ```
 
 ## Analysis
+
+### Standard Analysis Segments
+
+**IMPORTANT:** For consistency across all experiments, always analyze these two segments:
+
+1. **Last 10 messages** (`--start -10`): Captures ending dynamics, closing rituals
+2. **Messages 15-25** (`--start 15 --end 25`): Captures mid-conversation development
+
+When running new conversations, always analyze both segments:
+```bash
+# After batch completes, run both analyses:
+llm2llm analyze --llm1 MODEL1 --llm2 MODEL2 --start -10
+llm2llm analyze --llm1 MODEL1 --llm2 MODEL2 --start 15 --end 25
+
+# Then generate titles:
+llm2llm titles
+```
 
 ### LLM-Based Analysis
 ```bash
@@ -117,23 +142,27 @@ llm2llm analyze [--llm1 MODEL] [--llm2 MODEL] [--model ANALYSIS_MODEL] [--start 
 - Analyzes a segment of completed/paused conversations
 - `--start`: Start index (default: -5, last 5 messages). Supports negative indices.
 - `--end`: End index (default: None, to end of conversation)
-- Extracts: topics (2-5), mood (1-2), trajectory (1)
+- Extracts: topics (2-5), mood (1-2), trajectory (1), ending type (graceful/awkward)
 - Uses `claude-sonnet-4-5-20250929` by default for analysis
 - Multiple analyses per conversation are supported (different segments)
 
 Examples:
 ```bash
-# Analyze last 5 messages (default)
-llm2llm analyze
+# Standard segment 1: Last 10 messages
+llm2llm analyze --start -10
 
-# Analyze first 5 messages
-llm2llm analyze --start 0 --end 5
-
-# Analyze messages 10-15
-llm2llm analyze --start 10 --end 15
+# Standard segment 2: Messages 15-25
+llm2llm analyze --start 15 --end 25
 ```
 - Results stored in `analysis_results` table
 - Uses standardized categories (see `llm2llm/analysis/categories.md`)
+
+### Title Generation
+```bash
+llm2llm titles
+```
+- Generates titles for all conversations without titles
+- No model filters supported (runs on all untitled conversations)
 
 ### Manual Annotation
 ```bash
@@ -161,23 +190,34 @@ Shows top topics and mood distribution per ordered LLM pair and segment.
 1. **Run batch experiments:**
    ```bash
    # Same model talking to itself
-   llm2llm batch --llm1 claude-sonnet-4-20250514 --llm2 claude-sonnet-4-20250514 --count 5
+   llm2llm batch --llm1 claude-sonnet-4-20250514 --llm2 claude-sonnet-4-20250514 --count 3
 
    # Different models (order matters!)
-   llm2llm batch --llm1 claude-sonnet-4-20250514 --llm2 claude-3-5-haiku-20241022 --count 5
-   llm2llm batch --llm1 claude-3-5-haiku-20241022 --llm2 claude-sonnet-4-20250514 --count 5
+   llm2llm batch --llm1 claude-sonnet-4-20250514 --llm2 claude-3-5-haiku-20241022 --count 3
    ```
 
-2. **Analyze results** (choose one):
-   - Automated: `llm2llm analyze`
-   - Manual: See "Claude Code Manual Analysis Workflow" below
+2. **Analyze on BOTH standard segments:**
+   ```bash
+   llm2llm analyze --llm1 MODEL1 --llm2 MODEL2 --start -10
+   llm2llm analyze --llm1 MODEL1 --llm2 MODEL2 --start 15 --end 25
+   ```
 
-3. **View report:**
+3. **Generate titles:**
+   ```bash
+   llm2llm titles
+   ```
+
+4. **View report:**
    ```bash
    llm2llm report
    ```
 
-4. **Inspect interesting conversations:**
+5. **Regenerate dashboard:**
+   ```bash
+   llm2llm dashboard --open
+   ```
+
+6. **Inspect interesting conversations:**
    ```bash
    llm2llm list --status analyzed
    llm2llm view CONVERSATION_ID

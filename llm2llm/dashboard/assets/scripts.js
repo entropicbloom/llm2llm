@@ -160,7 +160,7 @@ function openConversation(convId, scrollToTurn = null) {
         html += `
             <div class="message ${roleClass}${isHighlighted ? ' highlighted' : ''}" id="turn-${msg.turn_number}" data-turn="${msg.turn_number}">
                 <div class="message-header">Turn ${msg.turn_number} - ${roleLabel}</div>
-                <div class="message-content">${escapeHtml(msg.content)}</div>
+                <div class="message-content">${renderMarkdown(msg.content)}</div>
             </div>
         `;
     }
@@ -796,6 +796,16 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function renderMarkdown(text) {
+    if (!text) return '';
+    // Configure marked for safe rendering
+    marked.setOptions({
+        breaks: true,  // Convert \n to <br>
+        gfm: true,     // GitHub Flavored Markdown
+    });
+    return marked.parse(text);
 }
 
 function togglePartnerConvs(partnerId) {
