@@ -155,7 +155,7 @@ function openConversation(convId, scrollToTurn = null) {
     for (const msg of transcript) {
         const role = msg.participant_role || 'unknown';
         const roleClass = role === 'initiator' ? 'initiator' : 'responder';
-        const roleLabel = role === 'initiator' ? 'LLM1' : 'LLM2';
+        const roleLabel = role === 'initiator' ? shortModel(conv.llm1_model) : shortModel(conv.llm2_model);
         const isHighlighted = scrollToTurn && msg.turn_number >= scrollToTurn && msg.turn_number < scrollToTurn + 5;
         html += `
             <div class="message ${roleClass}${isHighlighted ? ' highlighted' : ''}" id="turn-${msg.turn_number}" data-turn="${msg.turn_number}">
@@ -676,7 +676,7 @@ function renderInsights(container) {
                                 </div>
                             `).join('')}
                             ${d.conversationId ? `
-                                <a class="excerpt-link" onclick="openConversation('${d.conversationId}', ${d.turnStart || 1})">
+                                <a href="#" class="excerpt-link" onclick="event.preventDefault(); openConversation('${d.conversationId}', ${d.turnStart || 1})">
                                     View in context &rarr;
                                 </a>
                             ` : ''}
