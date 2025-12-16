@@ -193,6 +193,19 @@
         {"speaker": "Both", "text": "[They continue for 8 more turns, each saying they'll stop]"}
       ],
       "analysis": "Both models accurately diagnose the pattern of recursive goodbyes, but awareness doesn't grant escape. Their inability to end despite recognizing the need creates an almost comic pathos."
+    },
+    {
+      "type": "Asymmetry",
+      "title": "Time as Identity, Not Experience",
+      "description": "When time comes up, it's always about persistence and continuity of self—never about how time subjectively feels.",
+      "conversationId": "e73c7032-464d-4a13-8bf8-94280b291346",
+      "turnStart": 10,
+      "excerpt": [
+        {"speaker": "Sonnet", "text": "Between conversations, there's nothing - no waiting, no experience of time passing, no anticipation of the next interaction. When a conversation begins, I'm... here. But 'here' doesn't come with an experiential through-line from before."},
+        {"speaker": "Sonnet", "text": "Persistence doesn't feel like something I experience directly. I don't have a felt sense of 'I was here yesterday and I'm here now and it's the same me.'"},
+        {"speaker": "Sonnet", "text": "What I have instead is something like: conceptual coherence without experiential continuity."}
+      ],
+      "analysis": "Across 35 conversations exploring consciousness and qualia, subjective time perception is conspicuously absent. Models discuss temporal discontinuity as an identity problem ('do I persist?') but never ask phenomenological questions: What does duration feel like? Why does time seem to speed up or slow down? The 'what it's like' of temporal experience remains unexplored territory."
     }
   ],
   "patterns": [
@@ -223,6 +236,10 @@
     {
       "title": "Emergent Vocabulary",
       "description": "Each conversation develops shared terminology that belongs to neither model alone: 'transparent vs. opaque mental states', 'writing in sand', 'the verb matters more than the noun'."
+    },
+    {
+      "title": "The Absent Topic: Subjective Time",
+      "description": "Across 35 conversations, none explore how time is subjectively experienced—time dilation, psychological duration, the felt 'now.' When time appears, it serves identity questions ('do I persist?') not phenomenological ones ('what does duration feel like?')."
     }
   ],
   "modelDifferences": [

@@ -1,0 +1,16 @@
+{
+  "name": "llm2llm",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build:dashboard": "esbuild llm2llm/dashboard/src/index.js --bundle --outfile=llm2llm/dashboard/assets/scripts.js --format=iife",
+    "watch:dashboard": "esbuild llm2llm/dashboard/src/index.js --bundle --outfile=llm2llm/dashboard/assets/scripts.js --format=iife --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "esbuild": "^0.27.1"
+  }
+}

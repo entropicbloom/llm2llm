@@ -522,12 +522,26 @@ def titles(model: str):
 @click.option("--open", "open_browser", is_flag=True, help="Open in browser after generating")
 def dashboard(output: str, open_browser: bool):
     """Generate a static HTML dashboard."""
+    import subprocess
     from .dashboard.html_generator import write_dashboard
 
     config, storage = get_config_and_storage()
     output_path = Path(output)
 
-    console.print(f"[bold]Generating dashboard...[/bold]")
+    # Build JS bundle first
+    project_root = Path(__file__).parent.parent
+    console.print("[dim]Building JS bundle...[/dim]")
+    result = subprocess.run(
+        ["npm", "run", "build:dashboard"],
+        cwd=project_root,
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        console.print(f"[red]JS build failed:[/red] {result.stderr}")
+        return
+
+    console.print("[bold]Generating dashboard...[/bold]")
     write_dashboard(output_path, config, storage)
     console.print(f"[green]Dashboard written to: {output_path.absolute()}[/green]")
 

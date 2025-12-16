@@ -32,6 +32,9 @@ env/
 *.swp
 *.swo
 
+# Node
+node_modules/
+
 # LLM2LLM data directories
 data/
 
