@@ -195,20 +195,38 @@ function render() {
 }
 
 function renderConversations(container) {
+    // Only create filters once, then just update the list
+    if (!document.getElementById('search-input')) {
+        container.innerHTML = `
+            <div class="filters">
+                <input type="text" placeholder="Search titles..." id="search-input" value="${searchTerm}">
+                <select id="model-filter">
+                    <option value="">All models</option>
+                    ${DATA.models.map(m => `<option value="${m}" ${filterModel === m ? 'selected' : ''}>${shortModel(m)}</option>`).join('')}
+                </select>
+            </div>
+            <div id="conversation-list"></div>
+        `;
+
+        // Setup filter handlers once
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            renderConversationList();
+        });
+        document.getElementById('model-filter').addEventListener('change', (e) => {
+            filterModel = e.target.value;
+            renderConversationList();
+        });
+    }
+
+    renderConversationList();
+}
+
+function renderConversationList() {
+    const listContainer = document.getElementById('conversation-list');
+    if (!listContainer) return;
+
     const analyses = getFilteredAnalyses();
-
-    let html = `
-        <div class="filters">
-            <input type="text" placeholder="Search titles..." id="search-input" value="${searchTerm}">
-            <select id="model-filter">
-                <option value="">All models</option>
-                ${DATA.models.map(m => `<option value="${m}" ${filterModel === m ? 'selected' : ''}>${shortModel(m)}</option>`).join('')}
-            </select>
-        </div>
-        <div id="conversation-list">
-    `;
-
-    // Get conversations that have analysis in selected segment
     const analysisMap = new Map(analyses.map(a => [a.conversation_id, a]));
     let convs = DATA.conversations.filter(c => analysisMap.has(c.id));
 
@@ -221,6 +239,7 @@ function renderConversations(container) {
         convs = convs.filter(c => c.llm1_model === filterModel || c.llm2_model === filterModel);
     }
 
+    let html = '';
     for (const conv of convs) {
         const analysis = analysisMap.get(conv.id);
         const topics = analysis?.topics || {};
@@ -243,18 +262,7 @@ function renderConversations(container) {
         `;
     }
 
-    html += '</div>';
-    container.innerHTML = html;
-
-    // Setup filter handlers
-    document.getElementById('search-input').addEventListener('input', (e) => {
-        searchTerm = e.target.value;
-        render();
-    });
-    document.getElementById('model-filter').addEventListener('change', (e) => {
-        filterModel = e.target.value;
-        render();
-    });
+    listContainer.innerHTML = html;
 }
 
 function renderModels(container) {
