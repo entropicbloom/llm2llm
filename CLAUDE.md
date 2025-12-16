@@ -325,6 +325,56 @@ To add new providers, create a new file in `llm2llm/models/` following the patte
 3. Implement `generate()` method
 4. Import in `llm2llm/models/__init__.py`
 
+## Dashboard Development
+
+The dashboard JS is modular and bundled with esbuild.
+
+### Source Structure
+```
+llm2llm/dashboard/
+├── assets/
+│   ├── scripts.js      # bundled output (auto-generated)
+│   └── styles.css
+└── src/
+    ├── index.js        # entry point
+    ├── state.js        # state management
+    ├── data.js         # data helpers
+    ├── utils.js        # utilities
+    ├── ui.js           # UI helpers (modal, toggles)
+    └── views/
+        ├── conversations.js
+        ├── models.js
+        ├── pairs.js
+        └── insights.js
+```
+
+### Module Responsibilities
+- `state.js` - Single state object (currentView, filters, sort options)
+- `data.js` - Filtering and aggregation helpers (getFilteredAnalyses, createEmptyStats)
+- `utils.js` - Pure functions (shortModel, avg, metricColor)
+- `ui.js` - DOM interactions (openConversation, closeModal, toggleConvs)
+- `views/*.js` - Each renders one tab (Conversations, Models, Pairs, Insights)
+- `index.js` - Entry point, sets up event listeners, exposes functions to `window`
+
+### Global Data
+The HTML embeds two data objects that JS can access:
+- `DATA` - conversations, analyses, transcripts, models list
+- `INSIGHTS_DATA` - curated insights for the Insights tab
+
+### Making Changes
+1. Edit source files in `src/`
+2. Run `npm run watch:dashboard` for live rebuilding
+3. Run `llm2llm dashboard --open` to test with real data
+4. Functions called from `onclick` handlers must be exposed via `window.fn = fn` in `index.js`
+
+### Build Commands
+```bash
+npm run build:dashboard   # one-time build
+npm run watch:dashboard   # watch mode for development
+```
+
+Note: `llm2llm dashboard` automatically runs the JS build, so manual builds are only needed during development.
+
 ## Deployment
 
 The dashboard is hosted on GitHub Pages at **https://llm2llm.com**
