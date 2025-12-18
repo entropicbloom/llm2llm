@@ -2,9 +2,10 @@
 
 import { state } from './state.js';
 import { openConversation, closeModal, toggleConvs, scrollToInsightSection } from './ui.js';
-import { renderConversations } from './views/conversations.js';
+import { renderConversations, togglePreview } from './views/conversations.js';
 import { renderModels } from './views/models.js';
 import { renderPairs } from './views/pairs.js';
+import { renderMaps } from './views/maps.js';
 import { renderInsights } from './views/insights.js';
 
 // Expose functions to global scope for onclick handlers
@@ -12,6 +13,7 @@ window.openConversation = openConversation;
 window.closeModal = closeModal;
 window.toggleConvs = toggleConvs;
 window.scrollToInsightSection = scrollToInsightSection;
+window.togglePreview = togglePreview;
 
 function init() {
     setupNavigation();
@@ -90,6 +92,9 @@ function render() {
     } else if (state.currentView === 'pairs') {
         main.innerHTML = '';
         renderPairs(main);
+    } else if (state.currentView === 'maps') {
+        if (!document.getElementById('map-container')) main.innerHTML = '';
+        renderMaps(main);
     } else if (state.currentView === 'insights') {
         main.innerHTML = '';
         renderInsights(main);

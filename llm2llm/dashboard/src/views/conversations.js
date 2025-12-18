@@ -2,8 +2,43 @@
 
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
-import { shortModel } from '../utils.js';
-import { openConversation } from '../ui.js';
+import { shortModel, truncateText } from '../utils.js';
+
+/** Toggle conversation preview (accordion-style) */
+export function togglePreview(convId, event) {
+    event.stopPropagation();
+    state.expandedConvId = state.expandedConvId === convId ? null : convId;
+    renderConversationList();
+}
+
+/** Generate preview HTML for a conversation */
+function renderPreview(convId) {
+    const transcript = DATA.transcripts?.[convId] || [];
+    if (transcript.length < 2) return '';
+
+    const maxChars = 200;
+    const firstTwo = transcript.slice(0, 2);
+    const lastTwo = transcript.slice(-2);
+
+    const renderSnippet = (msg, fromEnd = false) => {
+        const role = msg.participant_role || 'unknown';
+        const roleClass = role === 'initiator' ? 'initiator' : 'responder';
+        const text = truncateText(msg.content, maxChars, fromEnd);
+        return `<div class="preview-msg ${roleClass}">${text}</div>`;
+    };
+
+    return `
+        <div class="conv-preview">
+            <div class="preview-section">
+                ${firstTwo.map(m => renderSnippet(m, false)).join('')}
+            </div>
+            <div class="preview-separator"></div>
+            <div class="preview-section">
+                ${lastTwo.map(m => renderSnippet(m, true)).join('')}
+            </div>
+        </div>
+    `;
+}
 
 export function renderConversations(container) {
     // Only create controls once
@@ -54,6 +89,8 @@ function renderConversationList() {
         const analysis = analysisMap.get(conv.id);
         const topics = analysis?.topics || {};
         const topTopics = Object.entries(topics).sort((a,b) => b[1] - a[1]).slice(0, 3);
+        const isExpanded = state.expandedConvId === conv.id;
+        const hasTranscript = DATA.transcripts?.[conv.id]?.length >= 2;
 
         html += `
             <div class="card" onclick="openConversation('${conv.id}')">
@@ -64,10 +101,19 @@ function renderConversationList() {
                     <span class="model-name">${shortModel(conv.llm2_model)}</span>
                     <span>${conv.turn_count} turns</span>
                 </div>
-                <div>
+                <div class="card-tags">
                     ${topTopics.map(([t]) => `<span class="tag">${t}</span>`).join('')}
                     ${analysis?.trajectory ? `<span class="tag trajectory">${analysis.trajectory}</span>` : ''}
                 </div>
+                ${hasTranscript ? `
+                    <div class="preview-area${isExpanded ? ' expanded' : ''}" onclick="togglePreview('${conv.id}', event)">
+                        <div class="preview-toggle">
+                            <span class="preview-toggle-text">${isExpanded ? 'hide preview' : 'show preview'}</span>
+                            <span class="preview-toggle-icon">${isExpanded ? '▲' : '▼'}</span>
+                        </div>
+                        ${isExpanded ? renderPreview(conv.id) : ''}
+                    </div>
+                ` : ''}
             </div>
         `;
     }

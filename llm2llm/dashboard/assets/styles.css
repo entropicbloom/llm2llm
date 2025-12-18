@@ -113,7 +113,6 @@ nav {
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 16px;
-    margin-bottom: 12px;
     cursor: pointer;
     transition: border-color 0.15s;
 }
@@ -122,9 +121,98 @@ nav {
     border-color: var(--accent);
 }
 
+#conversation-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-items: start;
+}
+
+@media (max-width: 800px) {
+    #conversation-list {
+        grid-template-columns: 1fr;
+    }
+}
+
 .card-title {
     font-weight: 600;
     margin-bottom: 4px;
+}
+
+.card-tags {
+    min-height: 28px;
+}
+
+.preview-area {
+    margin: 12px -16px -16px -16px;
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.preview-area:hover {
+    background: var(--bg-tertiary);
+}
+
+.preview-toggle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0;
+}
+
+.preview-toggle-text {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.preview-toggle-icon {
+    font-size: 8px;
+    color: var(--text-muted);
+}
+
+.conv-preview {
+    padding: 0 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.preview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.preview-msg {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding-left: 10px;
+    border-left: 2px solid var(--border);
+}
+
+.preview-msg.initiator {
+    border-left-color: var(--green);
+}
+
+.preview-msg.responder {
+    border-left-color: var(--accent);
+}
+
+.preview-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    margin-right: 8px;
+}
+
+.preview-separator {
+    height: 1px;
+    margin: 4px 20%;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
 }
 
 .card-meta {
@@ -920,4 +1008,151 @@ nav {
     .insights-nav-item {
         padding: 8px 12px;
     }
+}
+
+/* Maps View */
+.map-controls {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.axis-selectors {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.axis-selectors label,
+.model-selector label {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.axis-selectors select,
+.model-selector select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.model-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#map-container {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#scatter-plot {
+    display: block;
+    width: 100%;
+}
+
+.map-tooltip {
+    position: absolute;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    pointer-events: none;
+    z-index: 100;
+    max-width: 280px;
+}
+
+.map-tooltip.hidden {
+    display: none;
+}
+
+.tooltip-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.tooltip-models {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-family: monospace;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.tooltip-metrics {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.map-legend {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.legend-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.legend-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.legend-item.dimmed {
+    opacity: 0.3;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-label {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.map-point {
+    transition: r 0.15s, opacity 0.15s;
+}
+
+.map-point:hover {
+    stroke: var(--text);
+    stroke-width: 2;
 }

@@ -147,6 +147,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             <button class="nav-btn active" data-view="conversations">Conversations</button>
             <button class="nav-btn" data-view="models">Models</button>
             <button class="nav-btn" data-view="pairs">Pairs</button>
+            <button class="nav-btn" data-view="maps">Maps</button>
             <button class="nav-btn" data-view="insights">Insights</button>
             <div class="segment-selector">
                 <label>Segment:</label>
