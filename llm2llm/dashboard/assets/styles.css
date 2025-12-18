@@ -210,9 +210,12 @@ nav {
 }
 
 .preview-separator {
-    height: 1px;
-    margin: 4px 20%;
-    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    text-align: center;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--text-muted);
+    opacity: 0.6;
+    padding: 6px 0;
 }
 
 .card-meta {

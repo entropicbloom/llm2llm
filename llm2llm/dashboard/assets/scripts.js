@@ -230,18 +230,20 @@
     const maxChars = 200;
     const firstTwo = transcript.slice(0, 2);
     const lastTwo = transcript.slice(-2);
+    const skipped = transcript.length - 4;
     const renderSnippet = (msg, fromEnd = false) => {
       const role = msg.participant_role || "unknown";
       const roleClass = role === "initiator" ? "initiator" : "responder";
       const text = truncateText(msg.content, maxChars, fromEnd);
       return `<div class="preview-msg ${roleClass}">${text}</div>`;
     };
+    const separatorText = skipped > 0 ? `${skipped} messages later` : "\xB7\xB7\xB7";
     return `
         <div class="conv-preview">
             <div class="preview-section">
                 ${firstTwo.map((m) => renderSnippet(m, false)).join("")}
             </div>
-            <div class="preview-separator"></div>
+            <div class="preview-separator">${separatorText}</div>
             <div class="preview-section">
                 ${lastTwo.map((m) => renderSnippet(m, true)).join("")}
             </div>
@@ -603,23 +605,22 @@
   }
 
   // llm2llm/dashboard/src/views/maps.js
-  var MODEL_COLORS = [
-    "#4285f4",
-    "#ea4335",
-    "#fbbc04",
-    "#34a853",
-    "#ff6d01",
-    "#46bdc6",
-    "#7baaf7",
-    "#f07b72",
-    "#fcd04f",
-    "#81c995",
-    "#ff9e80",
-    "#78d9ec",
-    "#aecbfa",
-    "#f6aea9",
-    "#fde293"
-  ];
+  var PROVIDER_COLORS = {
+    anthropic: ["#8B6914", "#A67C00", "#C9A227", "#D4AF37", "#E6C55B", "#F0D77B"],
+    // bronze/gold
+    mistral: ["#CC5500", "#E86A17", "#FF7F2A", "#FF944D", "#FFAA70", "#FFBF94"],
+    // orange
+    openai: ["#10A37F", "#1DBF8E", "#3DD9A5", "#5EEDB8", "#7FFFD4", "#A0FFE0"],
+    // teal/green
+    default: ["#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
+    // gray
+  };
+  function getProvider(model) {
+    if (model.startsWith("claude-")) return "anthropic";
+    if (model.startsWith("mistralai/")) return "mistral";
+    if (model.startsWith("gpt-")) return "openai";
+    return "default";
+  }
   function renderMaps(container) {
     if (!document.getElementById("map-container")) {
       container.innerHTML = `
@@ -701,26 +702,52 @@
     svg.setAttribute("width", width);
     svg.setAttribute("height", height);
     const allModels = /* @__PURE__ */ new Set();
-    for (const a of analyses) {
+    for (const a of DATA.analyses) {
       allModels.add(a.llm1_model);
       allModels.add(a.llm2_model);
     }
     const modelList = [...allModels].sort();
     const modelColorMap = {};
-    modelList.forEach((model, i) => {
-      modelColorMap[model] = MODEL_COLORS[i % MODEL_COLORS.length];
+    const providerCounts = {};
+    modelList.forEach((model) => {
+      const provider = getProvider(model);
+      const colors = PROVIDER_COLORS[provider] || PROVIDER_COLORS.default;
+      const idx = providerCounts[provider] || 0;
+      modelColorMap[model] = colors[idx % colors.length];
+      providerCounts[provider] = idx + 1;
     });
-    const xValues = analyses.map((a) => a[xAxis] ?? 0);
-    const yValues = analyses.map((a) => a[yAxis] ?? 0);
+    const pairMap = {};
+    for (const a of analyses) {
+      const pairKey = `${a.llm1_model}|${a.llm2_model}`;
+      if (!pairMap[pairKey]) {
+        pairMap[pairKey] = {
+          llm1_model: a.llm1_model,
+          llm2_model: a.llm2_model,
+          conversations: [],
+          xValues: [],
+          yValues: []
+        };
+      }
+      pairMap[pairKey].conversations.push({ id: a.conversation_id, title: a.title });
+      pairMap[pairKey].xValues.push(a[xAxis] ?? 0);
+      pairMap[pairKey].yValues.push(a[yAxis] ?? 0);
+    }
+    const pairAverages = Object.values(pairMap).map((pair) => ({
+      pair,
+      avgX: pair.xValues.reduce((a, b) => a + b, 0) / pair.xValues.length,
+      avgY: pair.yValues.reduce((a, b) => a + b, 0) / pair.yValues.length
+    }));
+    const xValues = pairAverages.map((p) => p.avgX);
+    const yValues = pairAverages.map((p) => p.avgY);
     const dataXMin = Math.min(...xValues);
     const dataXMax = Math.max(...xValues);
     const dataYMin = Math.min(...yValues);
     const dataYMax = Math.max(...yValues);
     const xPadding = (dataXMax - dataXMin) * 0.15 || 0.1;
     const yPadding = (dataYMax - dataYMin) * 0.15 || 0.1;
-    const xMin = Math.max(0, dataXMin - xPadding);
+    const xMin = dataXMin - xPadding;
     const xMax = dataXMax + xPadding;
-    const yMin = Math.max(0, dataYMin - yPadding);
+    const yMin = dataYMin - yPadding;
     const yMax = dataYMax + yPadding;
     const scaleX = (v) => margin.left + (v - xMin) / (xMax - xMin) * plotWidth;
     const scaleY = (v) => margin.top + plotHeight - (v - yMin) / (yMax - yMin) * plotHeight;
@@ -743,26 +770,26 @@
       svgContent += `<text x="${margin.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10">${yVal.toFixed(2)}</text>`;
     }
     const points = [];
-    for (const a of analyses) {
-      const xVal = a[xAxis] ?? 0;
-      const yVal = a[yAxis] ?? 0;
-      const cx = scaleX(xVal);
-      const cy = scaleY(yVal);
-      const color1 = modelColorMap[a.llm1_model];
-      const color2 = modelColorMap[a.llm2_model];
-      let opacity = 0.7;
-      let radius = 6;
+    for (const { pair, avgX, avgY } of pairAverages) {
+      const cx = scaleX(avgX);
+      const cy = scaleY(avgY);
+      const color1 = modelColorMap[pair.llm1_model];
+      const color2 = modelColorMap[pair.llm2_model];
+      let opacity = 0.9;
+      let radius = 6 + Math.min(pair.conversations.length, 10);
       if (highlightModel) {
-        if (a.llm1_model === highlightModel || a.llm2_model === highlightModel) {
+        if (pair.llm1_model === highlightModel || pair.llm2_model === highlightModel) {
           opacity = 1;
-          radius = 8;
+          radius += 2;
         } else {
           opacity = 0.15;
-          radius = 5;
+          radius = Math.max(radius - 2, 4);
         }
       }
       points.push({
-        analysis: a,
+        pair,
+        avgX,
+        avgY,
         cx,
         cy,
         color1,
@@ -773,48 +800,48 @@
     }
     points.sort((a, b) => a.opacity - b.opacity);
     for (const pt of points) {
-      const a = pt.analysis;
-      if (a.llm1_model === a.llm2_model) {
+      const pair = pt.pair;
+      const pairId = `${pair.llm1_model}-${pair.llm2_model}`.replace(/[^a-zA-Z0-9]/g, "_");
+      if (pair.llm1_model === pair.llm2_model) {
         svgContent += `<circle cx="${pt.cx}" cy="${pt.cy}" r="${pt.radius}" fill="${pt.color1}" opacity="${pt.opacity}"
-                data-id="${a.conversation_id}" class="map-point" style="cursor: pointer;" />`;
+                data-pair="${pairId}" class="map-point" style="cursor: pointer;" />`;
       } else {
-        const id = a.conversation_id.slice(0, 8);
         svgContent += `
                 <defs>
-                    <clipPath id="left-${id}">
+                    <clipPath id="left-${pairId}">
                         <rect x="${pt.cx - pt.radius}" y="${pt.cy - pt.radius}" width="${pt.radius}" height="${pt.radius * 2}" />
                     </clipPath>
-                    <clipPath id="right-${id}">
+                    <clipPath id="right-${pairId}">
                         <rect x="${pt.cx}" y="${pt.cy - pt.radius}" width="${pt.radius}" height="${pt.radius * 2}" />
                     </clipPath>
                 </defs>
-                <circle cx="${pt.cx}" cy="${pt.cy}" r="${pt.radius}" fill="${pt.color1}" opacity="${pt.opacity}" clip-path="url(#left-${id})"
-                    data-id="${a.conversation_id}" class="map-point" style="cursor: pointer;" />
-                <circle cx="${pt.cx}" cy="${pt.cy}" r="${pt.radius}" fill="${pt.color2}" opacity="${pt.opacity}" clip-path="url(#right-${id})"
-                    data-id="${a.conversation_id}" class="map-point" style="cursor: pointer;" />
+                <circle cx="${pt.cx}" cy="${pt.cy}" r="${pt.radius}" fill="${pt.color1}" opacity="${pt.opacity}" clip-path="url(#left-${pairId})"
+                    data-pair="${pairId}" class="map-point" style="cursor: pointer;" />
+                <circle cx="${pt.cx}" cy="${pt.cy}" r="${pt.radius}" fill="${pt.color2}" opacity="${pt.opacity}" clip-path="url(#right-${pairId})"
+                    data-pair="${pairId}" class="map-point" style="cursor: pointer;" />
                 <circle cx="${pt.cx}" cy="${pt.cy}" r="${pt.radius}" fill="none" stroke="var(--border)" stroke-width="0.5" opacity="${pt.opacity}"
-                    data-id="${a.conversation_id}" class="map-point" style="cursor: pointer;" />
+                    data-pair="${pairId}" class="map-point" style="cursor: pointer;" />
             `;
       }
     }
     svg.innerHTML = svgContent;
     svg.querySelectorAll(".map-point").forEach((point) => {
       point.addEventListener("mouseenter", (e) => {
-        const id = e.target.dataset.id;
-        const analysis = analyses.find((a) => a.conversation_id === id);
-        if (analysis) {
+        const pairId = e.target.dataset.pair;
+        const pt = points.find((p) => `${p.pair.llm1_model}-${p.pair.llm2_model}`.replace(/[^a-zA-Z0-9]/g, "_") === pairId);
+        if (pt) {
+          const pair = pt.pair;
           tooltip.innerHTML = `
-                    <div class="tooltip-title">${analysis.title || "Untitled"}</div>
-                    <div class="tooltip-models">
-                        <span style="color: ${modelColorMap[analysis.llm1_model]}">${shortModel(analysis.llm1_model)}</span>
+                    <div class="tooltip-models" style="margin-bottom: 8px;">
+                        <span style="color: ${pt.color1}; font-weight: 600;">${shortModel(pair.llm1_model)}</span>
                         <span>\u2194</span>
-                        <span style="color: ${modelColorMap[analysis.llm2_model]}">${shortModel(analysis.llm2_model)}</span>
+                        <span style="color: ${pt.color2}; font-weight: 600;">${shortModel(pair.llm2_model)}</span>
                     </div>
-                    <div class="tooltip-metrics">
-                        D: ${(analysis.depth ?? 0).toFixed(2)} |
-                        W: ${(analysis.warmth ?? 0).toFixed(2)} |
-                        E: ${(analysis.energy ?? 0).toFixed(2)} |
-                        S: ${(analysis.spirituality ?? 0).toFixed(2)}
+                    <div class="tooltip-metrics" style="margin-bottom: 8px;">
+                        ${xAxis}: ${pt.avgX.toFixed(2)} | ${yAxis}: ${pt.avgY.toFixed(2)}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted);">
+                        ${pair.conversations.length} conversation${pair.conversations.length > 1 ? "s" : ""}
                     </div>
                 `;
           tooltip.classList.remove("hidden");
@@ -827,9 +854,12 @@
         tooltip.classList.add("hidden");
       });
       point.addEventListener("click", (e) => {
-        const id = e.target.dataset.id;
-        if (id && window.openConversation) {
-          window.openConversation(id);
+        const pairId = e.target.dataset.pair;
+        const pt = points.find((p) => `${p.pair.llm1_model}-${p.pair.llm2_model}`.replace(/[^a-zA-Z0-9]/g, "_") === pairId);
+        if (pt && pt.pair.conversations.length === 1) {
+          window.openConversation(pt.pair.conversations[0].id);
+        } else if (pt) {
+          window.openConversation(pt.pair.conversations[0].id);
         }
       });
     });

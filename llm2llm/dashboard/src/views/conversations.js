@@ -19,6 +19,7 @@ function renderPreview(convId) {
     const maxChars = 200;
     const firstTwo = transcript.slice(0, 2);
     const lastTwo = transcript.slice(-2);
+    const skipped = transcript.length - 4;
 
     const renderSnippet = (msg, fromEnd = false) => {
         const role = msg.participant_role || 'unknown';
@@ -27,12 +28,14 @@ function renderPreview(convId) {
         return `<div class="preview-msg ${roleClass}">${text}</div>`;
     };
 
+    const separatorText = skipped > 0 ? `${skipped} messages later` : '···';
+
     return `
         <div class="conv-preview">
             <div class="preview-section">
                 ${firstTwo.map(m => renderSnippet(m, false)).join('')}
             </div>
-            <div class="preview-separator"></div>
+            <div class="preview-separator">${separatorText}</div>
             <div class="preview-section">
                 ${lastTwo.map(m => renderSnippet(m, true)).join('')}
             </div>
