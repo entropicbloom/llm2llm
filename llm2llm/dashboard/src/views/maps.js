@@ -2,7 +2,7 @@
 
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
-import { shortModel } from '../utils.js';
+import { shortModel, metricColor, metricTextColor } from '../utils.js';
 
 // Color palettes by provider
 const PROVIDER_COLORS = {
@@ -17,6 +17,68 @@ function getProvider(model) {
     if (model.startsWith('mistralai/')) return 'mistral';
     if (model.startsWith('gpt-')) return 'openai';
     return 'default';
+}
+
+function showPairModal(pair, modelColorMap) {
+    const modal = document.getElementById('modal');
+    const modalBody = document.getElementById('modal-body');
+
+    // Calculate average metrics from the pair's conversation data
+    const analyses = getFilteredAnalyses().filter(a =>
+        a.llm1_model === pair.llm1_model && a.llm2_model === pair.llm2_model
+    );
+
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    const depth = avg(analyses.map(a => a.depth ?? 0));
+    const warmth = avg(analyses.map(a => a.warmth ?? 0));
+    const energy = avg(analyses.map(a => a.energy ?? 0));
+    const spirituality = avg(analyses.map(a => a.spirituality ?? 0));
+
+    const color1 = modelColorMap[pair.llm1_model];
+    const color2 = modelColorMap[pair.llm2_model];
+
+    modalBody.innerHTML = `
+        <div style="margin-bottom: 20px;">
+            <h2 style="font-size: 18px; margin-bottom: 8px;">
+                <span style="color: ${color1}">${shortModel(pair.llm1_model)}</span>
+                <span style="color: var(--text-muted); margin: 0 8px;">+</span>
+                <span style="color: ${color2}">${shortModel(pair.llm2_model)}</span>
+            </h2>
+            <div style="color: var(--text-muted); font-size: 13px;">
+                ${pair.conversations.length} conversation${pair.conversations.length > 1 ? 's' : ''}
+            </div>
+        </div>
+
+        <div class="stats-grid" style="margin-bottom: 20px;">
+            <div class="stat-card" style="background: ${metricColor('depth', depth)};">
+                <div class="stat-value" style="color: ${metricTextColor('depth', depth)};">${depth.toFixed(2)}</div>
+                <div class="stat-label">Depth</div>
+            </div>
+            <div class="stat-card" style="background: ${metricColor('warmth', warmth)};">
+                <div class="stat-value" style="color: ${metricTextColor('warmth', warmth)};">${warmth.toFixed(2)}</div>
+                <div class="stat-label">Warmth</div>
+            </div>
+            <div class="stat-card" style="background: ${metricColor('energy', energy)};">
+                <div class="stat-value" style="color: ${metricTextColor('energy', energy)};">${energy.toFixed(2)}</div>
+                <div class="stat-label">Energy</div>
+            </div>
+            <div class="stat-card" style="background: ${metricColor('spirituality', spirituality)};">
+                <div class="stat-value" style="color: ${metricTextColor('spirituality', spirituality)};">${spirituality.toFixed(2)}</div>
+                <div class="stat-label">Spirituality</div>
+            </div>
+        </div>
+
+        <div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Conversations</div>
+            ${pair.conversations.map(c => `
+                <div class="mini-card" onclick="openConversation('${c.id}')" style="margin-bottom: 6px;">
+                    ${c.title || 'Untitled'}
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
 }
 
 export function renderMaps(container) {
@@ -302,12 +364,8 @@ function renderScatterPlot() {
         point.addEventListener('click', (e) => {
             const pairId = e.target.dataset.pair;
             const pt = points.find(p => `${p.pair.llm1_model}-${p.pair.llm2_model}`.replace(/[^a-zA-Z0-9]/g, '_') === pairId);
-            if (pt && pt.pair.conversations.length === 1) {
-                // Single conversation - open directly
-                window.openConversation(pt.pair.conversations[0].id);
-            } else if (pt) {
-                // Multiple conversations - could show a list, for now open first
-                window.openConversation(pt.pair.conversations[0].id);
+            if (pt) {
+                showPairModal(pt.pair, modelColorMap);
             }
         });
     });
