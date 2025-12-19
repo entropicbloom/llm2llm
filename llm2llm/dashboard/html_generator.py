@@ -101,6 +101,16 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     """Generate the complete HTML dashboard."""
     data = generate_dashboard_data(config, storage)
 
+    # Always load preview snippets (first 2 + last 2 messages)
+    previews = {}
+    for conv in data["conversations"]:
+        messages = load_conversation_content(config.conversations_dir, conv["id"])
+        if len(messages) >= 4:
+            previews[conv["id"]] = messages[:2] + messages[-2:]
+        elif messages:
+            previews[conv["id"]] = messages
+    data["previews"] = previews
+
     # Optionally load full transcripts
     if include_transcripts:
         transcripts = {}

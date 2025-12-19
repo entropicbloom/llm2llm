@@ -236,12 +236,14 @@
     renderConversationList();
   }
   function renderPreview(convId) {
-    const transcript = DATA.transcripts?.[convId] || [];
-    if (transcript.length < 2) return "";
+    const preview = DATA.previews?.[convId] || [];
+    if (preview.length < 2) return "";
+    const conv = DATA.conversations.find((c) => c.id === convId);
+    const totalTurns = conv?.turn_count || preview.length;
     const maxChars = 200;
-    const firstTwo = transcript.slice(0, 2);
-    const lastTwo = transcript.slice(-2);
-    const skipped = transcript.length - 4;
+    const firstTwo = preview.slice(0, 2);
+    const lastTwo = preview.length >= 4 ? preview.slice(-2) : [];
+    const skipped = Math.max(0, totalTurns - 4);
     const renderSnippet = (msg, fromEnd = false) => {
       const role = msg.participant_role || "unknown";
       const roleClass = role === "initiator" ? "initiator" : "responder";
@@ -303,7 +305,7 @@
       const topics = analysis?.topics || {};
       const topTopics = Object.entries(topics).sort((a, b) => b[1] - a[1]).slice(0, 3);
       const isExpanded = state.expandedConvId === conv.id;
-      const hasTranscript = DATA.transcripts?.[conv.id]?.length >= 2;
+      const hasPreview = DATA.previews?.[conv.id]?.length >= 2;
       html += `
             <div class="card" onclick="openConversation('${conv.id}')">
                 <div class="card-title">${conv.title || "Untitled"}</div>
@@ -317,7 +319,7 @@
                     ${topTopics.map(([t]) => `<span class="tag">${t}</span>`).join("")}
                     ${analysis?.trajectory ? `<span class="tag trajectory">${analysis.trajectory}</span>` : ""}
                 </div>
-                ${hasTranscript ? `
+                ${hasPreview ? `
                     <div class="preview-area${isExpanded ? " expanded" : ""}" onclick="togglePreview('${conv.id}', event)">
                         <div class="preview-toggle">
                             <span class="preview-toggle-text">${isExpanded ? "hide preview" : "show preview"}</span>
