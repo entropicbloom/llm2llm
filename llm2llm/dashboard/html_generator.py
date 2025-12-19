@@ -176,5 +176,5 @@ const INSIGHTS_DATA = {insights};
 
 def write_dashboard(output_path: Path, config: Config, storage: ConversationStorage) -> None:
     """Generate and write the dashboard HTML file."""
-    html = generate_html(config, storage)
+    html = generate_html(config, storage, include_transcripts=False)
     output_path.write_text(html)

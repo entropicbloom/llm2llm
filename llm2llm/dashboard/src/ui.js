@@ -17,15 +17,30 @@ export function toggleConvs(id) {
 }
 
 /** Open conversation modal */
-export function openConversation(convId, scrollToTurn = null) {
+export async function openConversation(convId, scrollToTurn = null) {
     const modal = document.getElementById('modal');
     const body = document.getElementById('modal-body');
 
     const conv = DATA.conversations.find(c => c.id === convId);
     const analysis = DATA.analyses.find(a => a.conversation_id === convId);
-    const transcript = DATA.transcripts?.[convId] || [];
 
     if (!conv) return;
+
+    // Show loading state
+    modal.classList.remove('hidden');
+    body.innerHTML = '<div style="padding: 40px; text-align: center;">Loading transcript...</div>';
+
+    // Fetch transcript from conversations folder
+    let transcript = [];
+    try {
+        const response = await fetch(`/conversations/${convId}.json`);
+        if (response.ok) {
+            const data = await response.json();
+            transcript = data.messages || [];
+        }
+    } catch (e) {
+        console.warn('Could not load transcript:', e);
+    }
 
     let html = `
         <h2>${conv.title || 'Untitled'}</h2>
