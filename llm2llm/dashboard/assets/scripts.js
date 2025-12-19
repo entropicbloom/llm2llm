@@ -612,6 +612,8 @@
     // orange
     openai: ["#10A37F", "#1DBF8E", "#3DD9A5", "#5EEDB8", "#7FFFD4", "#A0FFE0"],
     // teal/green
+    google: ["#1E40AF", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"],
+    // blue (gemini)
     default: ["#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
     // gray
   };
@@ -619,6 +621,7 @@
     if (model.startsWith("claude-")) return "anthropic";
     if (model.startsWith("mistralai/")) return "mistral";
     if (model.startsWith("gpt-")) return "openai";
+    if (model.startsWith("google/")) return "google";
     return "default";
   }
   function showPairModal(pair, modelColorMap) {

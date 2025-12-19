@@ -165,7 +165,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
         </div>
     </div>
     <script>
-const DATA = {json.dumps(data, default=str)};
+const DATA = {json.dumps(data, default=str).replace('</script>', '<\\/script>')};
 const INSIGHTS_DATA = {insights};
 {js}
     </script>

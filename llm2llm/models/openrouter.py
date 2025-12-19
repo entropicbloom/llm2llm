@@ -8,12 +8,15 @@ class OpenRouterProvider(BaseLLMProvider):
     """Provider for OpenRouter models (OpenAI-compatible API)."""
 
     supported_models = [
+        "google/gemini-3-flash-preview",
         "mistralai/ministral-3b",
         "mistralai/ministral-8b",
         "mistralai/ministral-8b-2410",
         "mistralai/ministral-3b-2410",
         "mistralai/ministral-14b-2512",
         "mistralai/mistral-large-2512",
+        "openai/gpt-5.1",
+        "openai/gpt-5-mini",
     ]
 
     def __init__(self, api_key: str):
