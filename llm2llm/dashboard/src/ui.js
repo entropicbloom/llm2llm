@@ -1,6 +1,5 @@
 // UI helper functions
 
-import { state } from './state.js';
 import { shortModel, metricColor, metricTextColor, renderMarkdown } from './utils.js';
 
 /** Toggle collapsed state for conversation lists */

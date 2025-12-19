@@ -627,11 +627,10 @@
     const analyses = getFilteredAnalyses().filter(
       (a) => a.llm1_model === pair.llm1_model && a.llm2_model === pair.llm2_model
     );
-    const avg2 = (arr) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-    const depth = avg2(analyses.map((a) => a.depth ?? 0));
-    const warmth = avg2(analyses.map((a) => a.warmth ?? 0));
-    const energy = avg2(analyses.map((a) => a.energy ?? 0));
-    const spirituality = avg2(analyses.map((a) => a.spirituality ?? 0));
+    const depth = avg(analyses.map((a) => a.depth ?? 0));
+    const warmth = avg(analyses.map((a) => a.warmth ?? 0));
+    const energy = avg(analyses.map((a) => a.energy ?? 0));
+    const spirituality = avg(analyses.map((a) => a.spirituality ?? 0));
     const color1 = modelColorMap[pair.llm1_model];
     const color2 = modelColorMap[pair.llm2_model];
     modalBody.innerHTML = `

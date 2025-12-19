@@ -2,7 +2,7 @@
 
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
-import { shortModel, metricColor, metricTextColor } from '../utils.js';
+import { shortModel, avg, metricColor, metricTextColor } from '../utils.js';
 
 // Color palettes by provider
 const PROVIDER_COLORS = {
@@ -28,7 +28,6 @@ function showPairModal(pair, modelColorMap) {
         a.llm1_model === pair.llm1_model && a.llm2_model === pair.llm2_model
     );
 
-    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     const depth = avg(analyses.map(a => a.depth ?? 0));
     const warmth = avg(analyses.map(a => a.warmth ?? 0));
     const energy = avg(analyses.map(a => a.energy ?? 0));

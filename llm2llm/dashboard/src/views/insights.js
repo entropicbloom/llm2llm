@@ -1,6 +1,6 @@
 // Insights view
 
-import { scrollToInsightSection, openConversation } from '../ui.js';
+import { scrollToInsightSection } from '../ui.js';
 
 export function renderInsights(container) {
     const insights = INSIGHTS_DATA;

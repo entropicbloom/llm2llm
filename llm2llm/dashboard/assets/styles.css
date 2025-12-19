@@ -201,14 +201,6 @@ nav {
     border-left-color: var(--accent);
 }
 
-.preview-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    opacity: 0.6;
-    margin-right: 8px;
-}
-
 .preview-separator {
     text-align: center;
     font-size: 10px;
@@ -451,36 +443,6 @@ nav {
     color: var(--text-muted);
 }
 
-.pair-card {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-}
-
-.pair-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.pair-models {
-    font-family: monospace;
-    font-size: 13px;
-}
-
-.pair-count {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.pair-conversations {
-    display: grid;
-    gap: 8px;
-}
-
 .mini-card {
     background: var(--bg-tertiary);
     padding: 10px 12px;
@@ -540,12 +502,6 @@ nav {
     align-items: center;
     margin-bottom: 8px;
     flex-wrap: wrap;
-}
-
-.partner-stat {
-    font-size: 11px;
-    color: var(--text-muted);
-    font-family: monospace;
 }
 
 /* Rankings */
@@ -698,82 +654,10 @@ nav {
     margin-bottom: 16px;
 }
 
-.insight-card.phenomenon {
-    border-left: 4px solid var(--purple);
-}
-
-.insight-card.quote {
-    border-left: 4px solid var(--accent);
-}
-
-.insight-card.observation {
-    border-left: 4px solid var(--green);
-}
-
 .insight-card-title {
     font-weight: 600;
     font-size: 16px;
     margin-bottom: 8px;
-}
-
-.insight-card-content {
-    color: var(--text);
-    line-height: 1.7;
-}
-
-.insight-quote {
-    font-size: 16px;
-    font-style: italic;
-    line-height: 1.7;
-    margin: 0 0 12px 0;
-    padding: 0;
-    color: var(--text);
-}
-
-.insight-attribution {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.insight-source {
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--accent);
-}
-
-.insight-context {
-    font-size: 12px;
-    color: var(--text-muted);
-    background: var(--bg-tertiary);
-    padding: 2px 8px;
-    border-radius: 4px;
-}
-
-.metaphors-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-}
-
-.metaphor-card {
-    background: var(--bg-tertiary);
-    border-radius: 8px;
-    padding: 16px;
-}
-
-.metaphor-term {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--purple);
-    margin-bottom: 6px;
-}
-
-.metaphor-meaning {
-    font-size: 13px;
-    color: var(--text-muted);
-    line-height: 1.5;
 }
 
 /* Dynamic type colors */
