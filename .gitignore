@@ -35,8 +35,6 @@ env/
 # Node
 node_modules/
 
-# LLM2LLM data directories
-data/
 
 # Environment variables
 .env
