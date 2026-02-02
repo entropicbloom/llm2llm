@@ -12,6 +12,8 @@ llm2llm/
 │   └── llm2llm.db          # SQLite database (metadata + analysis)
 ├── conversations/          # JSON files with full conversation content
 │   └── {uuid}.json
+├── scripts/                # Utility scripts
+│   └── check_status.py     # Find conversations needing attention
 └── llm2llm/                # Source code
 ```
 
@@ -316,6 +318,23 @@ llm2llm delete CONVERSATION_ID
 # Delete all data (nuclear option)
 rm -rf data/ conversations/
 ```
+
+## Utility Scripts
+
+### Check Status
+Find conversations that need attention (non-analyzed, incomplete, orphaned, missing):
+```bash
+python3 scripts/check_status.py
+```
+
+Reports:
+- **NEEDS ANALYSIS**: Completed conversations without analysis results
+- **INCOMPLETE**: Active conversations with <50 turns
+- **EMPTY**: Conversations with 0 turns (failed starts)
+- **ORPHANED JSON FILES**: JSON files not tracked in database
+- **MISSING JSON FILES**: Database entries without corresponding JSON files
+
+Use this after syncing data between machines or to audit the dataset.
 
 ## Extending to Other Providers
 
