@@ -528,18 +528,20 @@ def dashboard(output: str, open_browser: bool):
     config, storage = get_config_and_storage()
     output_path = Path(output)
 
-    # Build JS bundle first
+    # Build JS bundle first (skip if npm not available)
     project_root = Path(__file__).parent.parent
-    console.print("[dim]Building JS bundle...[/dim]")
-    result = subprocess.run(
-        ["npm", "run", "build:dashboard"],
-        cwd=project_root,
-        capture_output=True,
-        text=True
-    )
-    if result.returncode != 0:
-        console.print(f"[red]JS build failed:[/red] {result.stderr}")
-        return
+    try:
+        console.print("[dim]Building JS bundle...[/dim]")
+        result = subprocess.run(
+            ["npm", "run", "build:dashboard"],
+            cwd=project_root,
+            capture_output=True,
+            text=True
+        )
+        if result.returncode != 0:
+            console.print(f"[yellow]JS build failed (using existing bundle):[/yellow] {result.stderr}")
+    except FileNotFoundError:
+        console.print("[yellow]npm not found, using existing JS bundle[/yellow]")
 
     console.print("[bold]Generating dashboard...[/bold]")
     write_dashboard(output_path, config, storage)
