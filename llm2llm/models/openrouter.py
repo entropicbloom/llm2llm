@@ -66,7 +66,6 @@ class OpenRouterProvider(BaseLLMProvider):
         content = response.choices[0].message.content
         if not content or not content.strip():
             # Some models (especially Qwen3) may return empty content occasionally
-            # Return a fallback to keep conversation going
-            return "(continuing the conversation)"
+            return "(no output)"
 
         return content
