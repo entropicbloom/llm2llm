@@ -44,7 +44,6 @@
     --purple: #6644aa;
     --cyan: #0088aa;
 }
-
 /* Base styles - Terminal Minimalist */
 * {
     box-sizing: border-box;
@@ -174,6 +173,69 @@ nav {
     border-color: var(--accent);
 }
 
+/* Mobile styles */
+@media (max-width: 768px) {
+    #app {
+        padding: 12px;
+    }
+
+    header {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+    }
+
+    .header-content {
+        gap: 12px;
+    }
+
+    .logo-text {
+        font-size: 20px;
+    }
+
+    .subtitle {
+        font-size: 11px;
+    }
+
+    nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        margin-bottom: 16px;
+        gap: 0;
+        flex-wrap: nowrap;
+    }
+
+    nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-btn {
+        padding: 14px 16px;
+        font-size: 12px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+
+    .segment-selector {
+        margin-left: 8px;
+        flex-shrink: 0;
+        padding-right: 8px;
+    }
+
+    .segment-selector label {
+        display: none;
+    }
+
+    .segment-selector select {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .theme-toggle {
+        flex-shrink: 0;
+        padding: 8px 12px;
+    }
+}
 /* Card components - Terminal Minimalist */
 .card {
     background: var(--bg-secondary);
@@ -362,6 +424,52 @@ nav {
     border-left-color: var(--accent);
 }
 
+/* Mobile card improvements */
+@media (max-width: 768px) {
+    .card {
+        padding: 14px;
+    }
+
+    .card-title {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .card-meta {
+        font-size: 12px;
+        gap: 8px;
+    }
+
+    .tag {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .filters {
+        gap: 8px;
+    }
+
+    .filters input,
+    .filters select {
+        padding: 12px;
+        font-size: 14px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .filters input {
+        width: 100%;
+    }
+
+    .preview-msg {
+        font-size: 12px;
+    }
+
+    .mini-card {
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+}
 /* Transcript styles - Terminal Minimalist */
 .transcript {
     margin-top: 16px;
@@ -510,6 +618,33 @@ nav {
     color: var(--text-muted);
 }
 
+/* Mobile transcript improvements */
+@media (max-width: 768px) {
+    .message {
+        padding: 12px 14px;
+    }
+
+    .message-content {
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+    .message-header {
+        font-size: 11px;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 9px;
+    }
+}
 /* Models/Pairs view - Terminal Minimalist */
 .partners-section {
     border-top: 1px solid var(--border);
@@ -673,6 +808,64 @@ nav {
     background: var(--bg-tertiary);
 }
 
+/* Mobile models/pairs improvements */
+@media (max-width: 768px) {
+    .ranking-controls {
+        gap: 8px;
+    }
+
+    .ranking-controls select {
+        padding: 10px 12px;
+        font-size: 14px;
+        flex: 1;
+    }
+
+    .ranking-item {
+        padding: 14px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .ranking-position {
+        font-size: 18px;
+        min-width: 32px;
+    }
+
+    .ranking-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ranking-pair {
+        font-size: 11px;
+        word-break: break-word;
+    }
+
+    .ranking-score {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    .ranking-value {
+        font-size: 20px;
+    }
+
+    .ranking-bar {
+        flex: 1;
+        margin-top: 0;
+    }
+
+    .toggle-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}
 /* Insights view - Terminal Minimalist */
 .insights-intro {
     margin-bottom: 32px;
@@ -957,7 +1150,6 @@ nav {
         border-bottom-color: var(--accent);
     }
 }
-
 /* Maps view - Terminal Minimalist */
 .map-controls {
     display: flex;
@@ -1100,6 +1292,49 @@ nav {
     stroke-width: 2;
 }
 
+/* Mobile maps improvements */
+@media (max-width: 768px) {
+    .map-controls {
+        gap: 12px;
+    }
+
+    .axis-selectors {
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .axis-selectors select,
+    .model-selector select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .model-selector {
+        width: 100%;
+    }
+
+    .model-selector select {
+        flex: 1;
+    }
+
+    .map-tooltip {
+        max-width: 220px;
+        padding: 10px;
+    }
+
+    .legend-items {
+        gap: 4px;
+    }
+
+    .legend-item {
+        padding: 6px 10px;
+    }
+
+    .legend-label {
+        font-size: 11px;
+    }
+}
 /* Split-pane Layout - Terminal Minimalist */
 #app-body {
     display: grid;
@@ -1167,7 +1402,7 @@ nav {
     padding-right: 40px;
 }
 
-/* Mobile: full-screen */
+/* Tablet: full-screen sidebar */
 @media (max-width: 1024px) {
     #app-body.panel-open {
         grid-template-columns: 1fr;
@@ -1182,6 +1417,61 @@ nav {
 
     .detail-panel.visible {
         transform: translateX(0);
+    }
+}
+
+/* Mobile: bottom sheet pattern */
+@media (max-width: 768px) {
+    .detail-panel {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 90vh;
+        max-height: 90vh;
+        transform: translateY(100%);
+        border-left: none;
+        border-top: 1px solid var(--border);
+        border-radius: 12px 12px 0 0;
+    }
+
+    .detail-panel.visible {
+        transform: translateY(0);
+    }
+
+    .panel-close {
+        position: sticky;
+        top: 0;
+        float: none;
+        width: 100%;
+        text-align: center;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .panel-close::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--text-muted);
+        border-radius: 2px;
+        margin-bottom: 8px;
+        opacity: 0.5;
+    }
+
+    #panel-body {
+        padding: 16px;
+        padding-top: 12px;
+    }
+
+    #panel-body h2 {
+        padding-right: 0;
     }
 }
 

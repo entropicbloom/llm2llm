@@ -160,3 +160,62 @@
     margin-right: 4px;
     background: var(--bg-tertiary);
 }
+
+/* Mobile models/pairs improvements */
+@media (max-width: 768px) {
+    .ranking-controls {
+        gap: 8px;
+    }
+
+    .ranking-controls select {
+        padding: 10px 12px;
+        font-size: 14px;
+        flex: 1;
+    }
+
+    .ranking-item {
+        padding: 14px;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .ranking-position {
+        font-size: 18px;
+        min-width: 32px;
+    }
+
+    .ranking-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ranking-pair {
+        font-size: 11px;
+        word-break: break-word;
+    }
+
+    .ranking-score {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    .ranking-value {
+        font-size: 20px;
+    }
+
+    .ranking-bar {
+        flex: 1;
+        margin-top: 0;
+    }
+
+    .toggle-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+}
