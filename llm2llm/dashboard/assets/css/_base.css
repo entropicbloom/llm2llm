@@ -1,4 +1,4 @@
-/* Base styles: reset, typography, layout */
+/* Base styles - Terminal Minimalist */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -6,20 +6,23 @@
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
     background: var(--bg);
     color: var(--text);
     line-height: 1.6;
+    font-size: 13px;
 }
 
 #app {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 24px;
 }
 
 header {
-    margin-bottom: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
 }
 
 .header-content {
@@ -29,38 +32,43 @@ header {
 }
 
 .logo {
-    width: 120px;
-    height: 120px;
+    width: 80px;
+    height: 80px;
     object-fit: contain;
+    filter: grayscale(100%) brightness(1.2);
 }
 
 header h1 {
-    font-size: 24px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .subtitle {
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 12px;
 }
 
 nav {
     display: flex;
-    gap: 8px;
+    gap: 0;
     margin-bottom: 24px;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 12px;
 }
 
 .nav-btn {
     background: none;
     border: none;
+    border-bottom: 2px solid transparent;
     color: var(--text-muted);
-    padding: 8px 16px;
+    padding: 12px 20px;
     cursor: pointer;
-    font-size: 14px;
-    border-radius: 6px;
-    transition: all 0.15s;
+    font-size: 11px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.1s;
 }
 
 .nav-btn:hover {
@@ -69,8 +77,8 @@ nav {
 }
 
 .nav-btn.active {
-    color: var(--text);
-    background: var(--bg-secondary);
+    color: var(--accent);
+    border-bottom-color: var(--accent);
 }
 
 .segment-selector {
@@ -81,8 +89,10 @@ nav {
 }
 
 .segment-selector label {
-    font-size: 12px;
+    font-size: 10px;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .segment-selector select {
@@ -90,6 +100,6 @@ nav {
     border: 1px solid var(--border);
     color: var(--text);
     padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
+    font-family: inherit;
+    font-size: 11px;
 }

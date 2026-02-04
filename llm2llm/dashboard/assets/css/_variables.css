@@ -1,15 +1,16 @@
-/* CSS Variables */
+/* CSS Variables - Terminal Minimalist */
 :root {
-    --bg: #ffffff;
-    --bg-secondary: #fafafa;
-    --bg-tertiary: #f0f0f0;
-    --text: #1a1a1a;
-    --text-muted: #666666;
-    --border: #e0e0e0;
-    --accent: #0066cc;
-    --accent-muted: #0066cc15;
-    --green: #22863a;
-    --orange: #b08800;
-    --red: #cb2431;
-    --purple: #6f42c1;
+    --bg: #0a0a0a;
+    --bg-secondary: #111111;
+    --bg-tertiary: #1a1a1a;
+    --text: #e0e0e0;
+    --text-muted: #707070;
+    --border: #2a2a2a;
+    --accent: #00ff88;
+    --accent-muted: #00ff8815;
+    --green: #00ff88;
+    --orange: #ffaa00;
+    --red: #ff4444;
+    --purple: #aa88ff;
+    --cyan: #00ddff;
 }

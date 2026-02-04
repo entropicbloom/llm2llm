@@ -1,17 +1,19 @@
-/* Insights view styles */
+/* Insights view - Terminal Minimalist */
 .insights-intro {
     margin-bottom: 32px;
 }
 
 .insights-intro h2 {
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 400;
     margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
 }
 
 .insights-subtitle {
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 12px;
 }
 
 .insight-section {
@@ -19,62 +21,64 @@
 }
 
 .insight-section-title {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 400;
     margin-bottom: 16px;
     padding-bottom: 8px;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
 }
 
 .insight-card {
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 8px;
     padding: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 1px;
 }
 
 .insight-card-title {
-    font-weight: 600;
-    font-size: 16px;
+    font-weight: 500;
+    font-size: 14px;
     margin-bottom: 8px;
 }
 
 /* Dynamic type colors */
 .insight-card.dynamic-compassion {
-    border-left: 4px solid #e57373;
+    border-left: 2px solid var(--red);
 }
 
 .insight-card.dynamic-co-discovery {
-    border-left: 4px solid var(--accent);
+    border-left: 2px solid var(--cyan);
 }
 
 .insight-card.dynamic-world-building {
-    border-left: 4px solid var(--purple);
+    border-left: 2px solid var(--purple);
 }
 
 .insight-card.dynamic-asymmetry {
-    border-left: 4px solid var(--orange);
+    border-left: 2px solid var(--orange);
 }
 
 .insight-card.dynamic-mirroring {
-    border-left: 4px solid var(--teal);
+    border-left: 2px solid var(--text-muted);
 }
 
 .insight-card.dynamic-tension {
-    border-left: 4px solid var(--green);
+    border-left: 2px solid var(--green);
 }
 
 .insight-card-description {
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 12px;
     margin-bottom: 16px;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .excerpt-container {
-    background: var(--bg-tertiary);
-    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
     padding: 16px;
     margin-bottom: 16px;
 }
@@ -82,6 +86,7 @@
 .excerpt-turn {
     margin-bottom: 12px;
     line-height: 1.6;
+    font-size: 12px;
 }
 
 .excerpt-turn:last-child {
@@ -89,24 +94,24 @@
 }
 
 .excerpt-speaker {
-    font-weight: 600;
-    color: var(--accent);
+    font-weight: 500;
+    color: var(--cyan);
     margin-right: 8px;
 }
 
 .excerpt-text {
-    color: var(--text);
-    font-style: italic;
+    color: var(--text-muted);
 }
 
 .excerpt-link {
     display: inline-block;
     margin-top: 12px;
     color: var(--accent);
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 11px;
     cursor: pointer;
     text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .excerpt-link:hover {
@@ -114,7 +119,7 @@
 }
 
 .insight-analysis {
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-muted);
     line-height: 1.6;
     padding-top: 8px;
@@ -124,60 +129,62 @@
 .patterns-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
 }
 
 .pattern-card {
-    background: var(--bg-tertiary);
-    border-radius: 8px;
+    background: var(--bg-secondary);
     padding: 16px;
-    border-left: 3px solid var(--accent);
+    border-left: 2px solid var(--accent);
 }
 
 .pattern-title {
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 500;
+    font-size: 12px;
     color: var(--text);
     margin-bottom: 8px;
 }
 
 .pattern-description {
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-muted);
     line-height: 1.5;
 }
 
 .model-diff-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
 }
 
 .model-diff-card {
-    background: var(--bg-tertiary);
-    border-radius: 8px;
+    background: var(--bg-secondary);
     padding: 20px;
 }
 
 .model-diff-name {
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--text);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--cyan);
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 2px solid var(--accent);
+    border-bottom: 1px solid var(--border);
 }
 
 .model-diff-traits {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 16px;
 }
 
 .model-diff-traits li {
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-muted);
     line-height: 1.6;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .model-diff-traits li:last-child {
@@ -187,7 +194,7 @@
 /* Insights Layout with Sidebar */
 .insights-layout {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 200px 1fr;
     gap: 32px;
 }
 
@@ -202,7 +209,7 @@
 .insights-nav {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
 }
 
 .insights-nav-item {
@@ -210,25 +217,24 @@
     justify-content: space-between;
     align-items: center;
     padding: 10px 12px;
-    border-radius: 6px;
     color: var(--text-muted);
     text-decoration: none;
-    font-size: 13px;
-    transition: all 0.15s;
+    font-size: 11px;
+    transition: all 0.1s;
     cursor: pointer;
+    border-left: 2px solid transparent;
 }
 
 .insights-nav-item:hover {
     background: var(--bg-tertiary);
     color: var(--text);
+    border-left-color: var(--accent);
 }
 
 .insights-nav-count {
     background: var(--bg-tertiary);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 500;
+    padding: 2px 6px;
+    font-size: 10px;
 }
 
 .insights-content {
@@ -236,17 +242,16 @@
 }
 
 .insights-disclaimer {
-    background: var(--bg-tertiary);
-    border-left: 3px solid var(--orange);
+    background: var(--bg-secondary);
+    border-left: 2px solid var(--orange);
     padding: 12px 16px;
-    border-radius: 0 6px 6px 0;
-    font-size: 13px;
+    font-size: 11px;
     color: var(--text-muted);
     margin-top: 16px;
     line-height: 1.5;
 }
 
-/* Responsive: collapse sidebar on smaller screens */
+/* Responsive */
 @media (max-width: 900px) {
     .insights-layout {
         grid-template-columns: 1fr;
@@ -263,10 +268,17 @@
     .insights-nav {
         flex-direction: row;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 4px;
     }
 
     .insights-nav-item {
-        padding: 8px 12px;
+        padding: 6px 10px;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+    }
+
+    .insights-nav-item:hover {
+        border-left: none;
+        border-bottom-color: var(--accent);
     }
 }

@@ -1,4 +1,4 @@
-/* Models and Pairs view styles */
+/* Models/Pairs view - Terminal Minimalist */
 .partners-section {
     border-top: 1px solid var(--border);
     padding-top: 12px;
@@ -19,7 +19,7 @@
 .partner-convs {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .partner-convs.collapsed {
@@ -28,11 +28,12 @@
 
 .toggle-btn {
     color: var(--accent);
-    font-size: 11px;
+    font-size: 10px;
     padding: 2px 8px;
-    border-radius: 4px;
     background: var(--accent-muted);
-    transition: background 0.15s;
+    transition: background 0.1s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .toggle-btn:hover {
@@ -57,23 +58,27 @@
 }
 
 .ranking-controls label {
-    font-size: 14px;
+    font-size: 10px;
     color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .ranking-controls select {
-    background: var(--bg-tertiary);
+    background: var(--bg-secondary);
     border: 1px solid var(--border);
     color: var(--text);
     padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 14px;
+    font-family: inherit;
+    font-size: 12px;
 }
 
 .ranking-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
 }
 
 .ranking-item {
@@ -81,40 +86,38 @@
     align-items: center;
     gap: 16px;
     background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
     padding: 16px;
-    transition: border-color 0.15s;
+    transition: background 0.1s;
 }
 
 .ranking-item:hover {
-    border-color: var(--accent);
+    background: var(--bg-tertiary);
 }
 
 .ranking-position {
-    font-size: 24px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 400;
     color: var(--text-muted);
     min-width: 40px;
     text-align: center;
 }
 
-.ranking-position.gold { color: #d4a017; }
-.ranking-position.silver { color: #8b8b8b; }
-.ranking-position.bronze { color: #cd7f32; }
+.ranking-position.gold { color: var(--orange); }
+.ranking-position.silver { color: var(--text-muted); }
+.ranking-position.bronze { color: #8b6914; }
 
 .ranking-info {
     flex: 1;
 }
 
 .ranking-pair {
-    font-family: monospace;
-    font-size: 14px;
+    font-size: 12px;
     margin-bottom: 4px;
+    color: var(--cyan);
 }
 
 .ranking-meta {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
 }
 
@@ -123,40 +126,37 @@
 }
 
 .ranking-value {
-    font-size: 28px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 400;
     color: var(--accent);
 }
 
 .ranking-label {
-    font-size: 11px;
+    font-size: 9px;
     color: var(--text-muted);
     text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .ranking-bar {
-    width: 120px;
-    height: 8px;
+    width: 100px;
+    height: 2px;
     background: var(--bg-tertiary);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .ranking-bar-fill {
     height: 100%;
     background: var(--accent);
-    border-radius: 4px;
     transition: width 0.3s;
 }
 
 .metric-badge {
     display: inline-flex;
     align-items: center;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-family: monospace;
-    font-weight: 500;
-    margin-right: 6px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: 400;
+    margin-right: 4px;
+    background: var(--bg-tertiary);
 }
