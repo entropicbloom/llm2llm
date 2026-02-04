@@ -1,0 +1,146 @@
+/* Maps view styles */
+.map-controls {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.axis-selectors {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.axis-selectors label,
+.model-selector label {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.axis-selectors select,
+.model-selector select {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.model-selector {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#map-container {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#scatter-plot {
+    display: block;
+    width: 100%;
+}
+
+.map-tooltip {
+    position: absolute;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    pointer-events: none;
+    z-index: 100;
+    max-width: 280px;
+}
+
+.map-tooltip.hidden {
+    display: none;
+}
+
+.tooltip-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.tooltip-models {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-family: monospace;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.tooltip-metrics {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.map-legend {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.legend-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.legend-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.legend-item.dimmed {
+    opacity: 0.3;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-label {
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.map-point {
+    transition: r 0.15s, opacity 0.15s;
+}
+
+.map-point:hover {
+    stroke: var(--text);
+    stroke-width: 2;
+}

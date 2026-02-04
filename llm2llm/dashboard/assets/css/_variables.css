@@ -1,0 +1,15 @@
+/* CSS Variables */
+:root {
+    --bg: #ffffff;
+    --bg-secondary: #fafafa;
+    --bg-tertiary: #f0f0f0;
+    --text: #1a1a1a;
+    --text-muted: #666666;
+    --border: #e0e0e0;
+    --accent: #0066cc;
+    --accent-muted: #0066cc15;
+    --green: #22863a;
+    --orange: #b08800;
+    --red: #cb2431;
+    --purple: #6f42c1;
+}

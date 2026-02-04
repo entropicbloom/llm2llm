@@ -12,6 +12,18 @@ from llm2llm.dashboard.data import load_all_analyses, infer_provider
 # Path to assets directory
 ASSETS_DIR = Path(__file__).parent / "assets"
 
+# CSS partials in load order
+CSS_PARTIALS = [
+    "_variables.css",
+    "_base.css",
+    "_cards.css",
+    "_transcript.css",
+    "_models.css",
+    "_insights.css",
+    "_maps.css",
+    "_panel.css",
+]
+
 
 def load_asset(filename: str) -> str:
     """Load an asset file from the assets directory."""
@@ -19,6 +31,17 @@ def load_asset(filename: str) -> str:
     if not asset_path.exists():
         raise FileNotFoundError(f"Asset not found: {asset_path}")
     return asset_path.read_text()
+
+
+def load_css() -> str:
+    """Load and concatenate all CSS partials."""
+    css_dir = ASSETS_DIR / "css"
+    parts = []
+    for partial in CSS_PARTIALS:
+        path = css_dir / partial
+        if path.exists():
+            parts.append(path.read_text())
+    return "\n".join(parts)
 
 
 def generate_dashboard_data(config: Config, storage: ConversationStorage) -> dict:
@@ -123,7 +146,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     logo_data_uri = load_logo_base64(config)
 
     # Load assets
-    css = load_asset("styles.css")
+    css = load_css()
     js = load_asset("scripts.js")
     insights = load_asset("insights.json")
 
