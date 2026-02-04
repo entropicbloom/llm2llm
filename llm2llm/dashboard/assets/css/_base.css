@@ -38,6 +38,13 @@ header {
     filter: grayscale(100%) brightness(1.2);
 }
 
+.logo-text {
+    font-size: 24px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    opacity: 0.9;
+}
+
 header h1 {
     font-size: 18px;
     font-weight: 400;

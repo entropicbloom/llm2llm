@@ -169,7 +169,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     <div id="app">
         <header>
             <div class="header-content">
-                {f'<img src="{logo_data_uri}" alt="LLM2LLM" class="logo">' if logo_data_uri else ''}
+                <div class="logo-text">[LLM→LLM]</div>
                 <div>
                     <h1>LLM2LLM</h1>
                     <p class="subtitle">{data["total_conversations"]} conversations analyzed</p>
