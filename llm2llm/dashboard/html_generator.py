@@ -159,7 +159,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     <title>LLM2LLM Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
 {css}
@@ -169,11 +169,8 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     <div id="app">
         <header>
             <div class="header-content">
-                {f'<img src="{logo_data_uri}" alt="LLM2LLM" class="logo">' if logo_data_uri else ''}
-                <div>
-                    <h1>LLM2LLM</h1>
-                    <p class="subtitle">{data["total_conversations"]} conversations analyzed</p>
-                </div>
+                <div class="logo-text">[LLM→LLM]</div>
+                <p class="subtitle">{data["total_conversations"]} conversations analyzed</p>
             </div>
         </header>
         <nav>
@@ -186,6 +183,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
                 <label>Segment:</label>
                 <select id="segment-select"></select>
             </div>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle theme">◐</button>
         </nav>
         <div id="app-body">
             <main id="main-content">

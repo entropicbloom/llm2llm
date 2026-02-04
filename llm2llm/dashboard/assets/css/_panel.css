@@ -1,8 +1,8 @@
-/* Split-pane Layout and Detail Panel */
+/* Split-pane Layout - Terminal Minimalist */
 #app-body {
     display: grid;
     grid-template-columns: 1fr;
-    transition: grid-template-columns 0.3s ease;
+    transition: grid-template-columns 0.2s ease;
 }
 
 #app-body.panel-open {
@@ -26,9 +26,8 @@
     border-left: 1px solid var(--border);
     overflow-y: auto;
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
     z-index: 100;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
 }
 
 .detail-panel.visible {
@@ -42,15 +41,16 @@
     background: var(--bg);
     border: none;
     color: var(--text-muted);
-    font-size: 28px;
+    font-size: 20px;
     cursor: pointer;
     z-index: 10;
     padding: 16px;
     line-height: 1;
+    font-family: inherit;
 }
 
 .panel-close:hover {
-    color: var(--text);
+    color: var(--accent);
 }
 
 #panel-body {
@@ -59,13 +59,13 @@
 }
 
 #panel-body h2 {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
     margin-bottom: 8px;
     padding-right: 40px;
 }
 
-/* Mobile: panel becomes full-screen overlay */
+/* Mobile: full-screen */
 @media (max-width: 1024px) {
     #app-body.panel-open {
         grid-template-columns: 1fr;
@@ -75,7 +75,6 @@
         width: 100%;
         min-width: unset;
         max-width: unset;
-        box-shadow: none;
         border-left: none;
     }
 

@@ -19,6 +19,7 @@ function init() {
     setupNavigation();
     setupPanel();
     setupSegmentSelector();
+    setupThemeToggle();
     render();
 }
 
@@ -77,6 +78,33 @@ function setupPanel() {
         if (e.key === 'Escape') {
             closePanel();
         }
+    });
+}
+
+function setupThemeToggle() {
+    const toggle = document.getElementById('theme-toggle');
+    const root = document.documentElement;
+
+    // Check saved preference
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light') {
+        root.setAttribute('data-theme', 'light');
+        toggle.textContent = '◑';
+    }
+
+    toggle.addEventListener('click', () => {
+        const isLight = root.getAttribute('data-theme') === 'light';
+        if (isLight) {
+            root.removeAttribute('data-theme');
+            toggle.textContent = '◐';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            root.setAttribute('data-theme', 'light');
+            toggle.textContent = '◑';
+            localStorage.setItem('theme', 'light');
+        }
+        // Re-render to update metric colors
+        render();
     });
 }
 
