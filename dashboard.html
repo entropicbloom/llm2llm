@@ -1404,13 +1404,9 @@ nav {
 
 /* Tablet: full-screen sidebar */
 @media (max-width: 1024px) {
-    /* Lock all scroll when panel covers content */
-    html:has(.detail-panel.visible),
+    /* Lock body scroll when panel covers content */
     body:has(.detail-panel.visible) {
         overflow: hidden;
-        position: fixed;
-        width: 100%;
-        height: 100%;
     }
 
     #app-body.panel-open {
