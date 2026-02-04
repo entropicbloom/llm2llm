@@ -260,57 +260,6 @@ nav {
     border-color: var(--accent);
 }
 
-/* Modal */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.modal.hidden {
-    display: none;
-}
-
-.modal-content {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    width: 90%;
-    max-width: 800px;
-    max-height: 90vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 24px;
-    cursor: pointer;
-    z-index: 10;
-}
-
-.modal-close:hover {
-    color: var(--text);
-}
-
-#modal-body {
-    padding: 24px;
-    overflow-y: auto;
-}
-
 .transcript {
     margin-top: 16px;
 }
@@ -1042,4 +991,91 @@ nav {
 .map-point:hover {
     stroke: var(--text);
     stroke-width: 2;
+}
+
+/* Split-pane Layout */
+#app-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    transition: grid-template-columns 0.3s ease;
+}
+
+#app-body.panel-open {
+    grid-template-columns: 1fr 480px;
+}
+
+#main-content {
+    min-width: 0;
+}
+
+/* Detail Panel */
+.detail-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 480px;
+    height: 100vh;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 100;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.detail-panel.visible {
+    transform: translateX(0);
+}
+
+.panel-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    background: var(--bg);
+    border: none;
+    color: var(--text-muted);
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 10;
+    padding: 16px;
+    line-height: 1;
+}
+
+.panel-close:hover {
+    color: var(--text);
+}
+
+#panel-body {
+    padding: 24px;
+    padding-top: 8px;
+}
+
+#panel-body h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding-right: 40px;
+}
+
+/* Selected card highlight */
+.card.selected {
+    border-color: var(--accent);
+    background: var(--accent-muted);
+}
+
+/* Mobile: panel becomes full-screen overlay */
+@media (max-width: 1024px) {
+    #app-body.panel-open {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-panel {
+        width: 100%;
+        box-shadow: none;
+    }
+
+    .detail-panel.visible {
+        transform: translateX(0);
+    }
 }

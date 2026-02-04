@@ -7,6 +7,8 @@
     searchTerm: "",
     filterModel: "",
     expandedConvId: null,
+    // Detail panel
+    selectedConversationId: null,
     // Models view
     modelSortAttribute: "count",
     // Pairs view
@@ -92,12 +94,16 @@
     }
   }
   async function openConversation(convId, scrollToTurn = null) {
-    const modal = document.getElementById("modal");
-    const body = document.getElementById("modal-body");
     const conv = DATA.conversations.find((c) => c.id === convId);
     const analysis = DATA.analyses.find((a) => a.conversation_id === convId);
     if (!conv) return;
-    modal.classList.remove("hidden");
+    state.selectedConversationId = convId;
+    updateSelectedCard(convId);
+    const panel = document.getElementById("detail-panel");
+    const body = document.getElementById("panel-body");
+    const appBody = document.getElementById("app-body");
+    panel.classList.add("visible");
+    appBody.classList.add("panel-open");
     body.innerHTML = '<div style="padding: 40px; text-align: center;">Loading transcript...</div>';
     let transcript = [];
     try {
@@ -165,7 +171,6 @@
     }
     html += "</div>";
     body.innerHTML = html;
-    modal.classList.remove("hidden");
     if (scrollToTurn) {
       setTimeout(() => {
         const turnEl = document.getElementById(`turn-${scrollToTurn}`);
@@ -175,8 +180,26 @@
       }, 100);
     }
   }
-  function closeModal() {
-    document.getElementById("modal").classList.add("hidden");
+  function closePanel() {
+    const panel = document.getElementById("detail-panel");
+    const appBody = document.getElementById("app-body");
+    panel.classList.remove("visible");
+    appBody.classList.remove("panel-open");
+    state.selectedConversationId = null;
+    updateSelectedCard(null);
+  }
+  function updateSelectedCard(selectedId) {
+    document.querySelectorAll(".card.selected").forEach((card) => {
+      card.classList.remove("selected");
+    });
+    if (selectedId) {
+      const cards = document.querySelectorAll(".card");
+      cards.forEach((card) => {
+        if (card.getAttribute("onclick")?.includes(selectedId)) {
+          card.classList.add("selected");
+        }
+      });
+    }
   }
   function scrollToInsightSection(sectionId) {
     const section = document.getElementById(sectionId);
@@ -306,8 +329,9 @@
       const topTopics = Object.entries(topics).sort((a, b) => b[1] - a[1]).slice(0, 3);
       const isExpanded = state.expandedConvId === conv.id;
       const hasPreview = DATA.previews?.[conv.id]?.length >= 2;
+      const isSelected = state.selectedConversationId === conv.id;
       html += `
-            <div class="card" onclick="openConversation('${conv.id}')">
+            <div class="card${isSelected ? " selected" : ""}" onclick="openConversation('${conv.id}')">
                 <div class="card-title">${conv.title || "Untitled"}</div>
                 <div class="card-meta">
                     <span class="model-name">${shortModel(conv.llm1_model)}</span>
@@ -637,9 +661,10 @@
     if (model.startsWith("google/")) return "google";
     return "default";
   }
-  function showPairModal(pair, modelColorMap) {
-    const modal = document.getElementById("modal");
-    const modalBody = document.getElementById("modal-body");
+  function showPairInPanel(pair, modelColorMap) {
+    const panel = document.getElementById("detail-panel");
+    const body = document.getElementById("panel-body");
+    const appBody = document.getElementById("app-body");
     const analyses = getFilteredAnalyses().filter(
       (a) => a.llm1_model === pair.llm1_model && a.llm2_model === pair.llm2_model
     );
@@ -649,7 +674,7 @@
     const spirituality = avg(analyses.map((a) => a.spirituality ?? 0));
     const color1 = modelColorMap[pair.llm1_model];
     const color2 = modelColorMap[pair.llm2_model];
-    modalBody.innerHTML = `
+    body.innerHTML = `
         <div style="margin-bottom: 20px;">
             <h2 style="font-size: 18px; margin-bottom: 8px;">
                 <span style="color: ${color1}">${shortModel(pair.llm1_model)}</span>
@@ -689,7 +714,8 @@
             `).join("")}
         </div>
     `;
-    modal.classList.remove("hidden");
+    panel.classList.add("visible");
+    appBody.classList.add("panel-open");
   }
   function renderMaps(container) {
     if (!document.getElementById("map-container")) {
@@ -927,7 +953,7 @@
         const pairId = e.target.dataset.pair;
         const pt = points.find((p) => `${p.pair.llm1_model}-${p.pair.llm2_model}`.replace(/[^a-zA-Z0-9]/g, "_") === pairId);
         if (pt) {
-          showPairModal(pt.pair, modelColorMap);
+          showPairInPanel(pt.pair, modelColorMap);
         }
       });
     });
@@ -1073,13 +1099,13 @@
 
   // llm2llm/dashboard/src/index.js
   window.openConversation = openConversation;
-  window.closeModal = closeModal;
+  window.closePanel = closePanel;
   window.toggleConvs = toggleConvs;
   window.scrollToInsightSection = scrollToInsightSection;
   window.togglePreview = togglePreview;
   function init() {
     setupNavigation();
-    setupModal();
+    setupPanel();
     setupSegmentSelector();
     render();
   }
@@ -1120,14 +1146,13 @@
       });
     });
   }
-  function setupModal() {
-    const modal = document.getElementById("modal");
-    modal.querySelector(".modal-close").addEventListener("click", closeModal);
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
-    });
+  function setupPanel() {
+    const panel = document.getElementById("detail-panel");
+    panel.querySelector(".panel-close").addEventListener("click", closePanel);
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeModal();
+      if (e.key === "Escape") {
+        closePanel();
+      }
     });
   }
   function render() {

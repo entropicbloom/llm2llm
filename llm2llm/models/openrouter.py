@@ -24,6 +24,8 @@ class OpenRouterProvider(BaseLLMProvider):
         "qwen/qwen3-235b-a22b",
         "qwen/qwen3-30b-a3b",
         "qwen/qwen3-max",
+        # Moonshot
+        "moonshotai/kimi-k2.5",
     ]
 
     def __init__(self, api_key: str):

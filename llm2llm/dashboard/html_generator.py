@@ -164,14 +164,14 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
                 <select id="segment-select"></select>
             </div>
         </nav>
-        <main id="main-content">
-            <!-- Content injected by JS -->
-        </main>
-    </div>
-    <div id="modal" class="modal hidden">
-        <div class="modal-content">
-            <button class="modal-close">&times;</button>
-            <div id="modal-body"></div>
+        <div id="app-body">
+            <main id="main-content">
+                <!-- Content injected by JS -->
+            </main>
+            <aside id="detail-panel" class="detail-panel">
+                <button class="panel-close">&times;</button>
+                <div id="panel-body"></div>
+            </aside>
         </div>
     </div>
     <script>

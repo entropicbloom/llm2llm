@@ -21,9 +21,10 @@ function getProvider(model) {
     return 'default';
 }
 
-function showPairModal(pair, modelColorMap) {
-    const modal = document.getElementById('modal');
-    const modalBody = document.getElementById('modal-body');
+function showPairInPanel(pair, modelColorMap) {
+    const panel = document.getElementById('detail-panel');
+    const body = document.getElementById('panel-body');
+    const appBody = document.getElementById('app-body');
 
     // Calculate average metrics from the pair's conversation data
     const analyses = getFilteredAnalyses().filter(a =>
@@ -38,7 +39,7 @@ function showPairModal(pair, modelColorMap) {
     const color1 = modelColorMap[pair.llm1_model];
     const color2 = modelColorMap[pair.llm2_model];
 
-    modalBody.innerHTML = `
+    body.innerHTML = `
         <div style="margin-bottom: 20px;">
             <h2 style="font-size: 18px; margin-bottom: 8px;">
                 <span style="color: ${color1}">${shortModel(pair.llm1_model)}</span>
@@ -79,7 +80,8 @@ function showPairModal(pair, modelColorMap) {
         </div>
     `;
 
-    modal.classList.remove('hidden');
+    panel.classList.add('visible');
+    appBody.classList.add('panel-open');
 }
 
 export function renderMaps(container) {
@@ -366,7 +368,7 @@ function renderScatterPlot() {
             const pairId = e.target.dataset.pair;
             const pt = points.find(p => `${p.pair.llm1_model}-${p.pair.llm2_model}`.replace(/[^a-zA-Z0-9]/g, '_') === pairId);
             if (pt) {
-                showPairModal(pt.pair, modelColorMap);
+                showPairInPanel(pt.pair, modelColorMap);
             }
         });
     });

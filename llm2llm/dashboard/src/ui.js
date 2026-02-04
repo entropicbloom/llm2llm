@@ -1,5 +1,6 @@
 // UI helper functions
 
+import { state } from './state.js';
 import { shortModel, metricColor, metricTextColor, renderMarkdown } from './utils.js';
 
 /** Toggle collapsed state for conversation lists */
@@ -16,18 +17,32 @@ export function toggleConvs(id) {
     }
 }
 
-/** Open conversation modal */
-export async function openConversation(convId, scrollToTurn = null) {
-    const modal = document.getElementById('modal');
-    const body = document.getElementById('modal-body');
+/** Check if we should use mobile mode (full-screen overlay) */
+function isMobileMode() {
+    return window.innerWidth <= 1024;
+}
 
+/** Open conversation in detail panel */
+export async function openConversation(convId, scrollToTurn = null) {
     const conv = DATA.conversations.find(c => c.id === convId);
     const analysis = DATA.analyses.find(a => a.conversation_id === convId);
 
     if (!conv) return;
 
-    // Show loading state
-    modal.classList.remove('hidden');
+    // Update state
+    state.selectedConversationId = convId;
+
+    // Update card selection
+    updateSelectedCard(convId);
+
+    // Determine target container
+    const panel = document.getElementById('detail-panel');
+    const body = document.getElementById('panel-body');
+    const appBody = document.getElementById('app-body');
+
+    // Show panel with loading state
+    panel.classList.add('visible');
+    appBody.classList.add('panel-open');
     body.innerHTML = '<div style="padding: 40px; text-align: center;">Loading transcript...</div>';
 
     // Fetch transcript from conversations folder
@@ -102,7 +117,6 @@ export async function openConversation(convId, scrollToTurn = null) {
 
     html += '</div>';
     body.innerHTML = html;
-    modal.classList.remove('hidden');
 
     if (scrollToTurn) {
         setTimeout(() => {
@@ -114,10 +128,37 @@ export async function openConversation(convId, scrollToTurn = null) {
     }
 }
 
-/** Close modal */
-export function closeModal() {
-    document.getElementById('modal').classList.add('hidden');
+/** Close detail panel */
+export function closePanel() {
+    const panel = document.getElementById('detail-panel');
+    const appBody = document.getElementById('app-body');
+
+    panel.classList.remove('visible');
+    appBody.classList.remove('panel-open');
+
+    // Clear selection
+    state.selectedConversationId = null;
+    updateSelectedCard(null);
 }
+
+/** Update selected card highlighting */
+function updateSelectedCard(selectedId) {
+    // Remove existing selection
+    document.querySelectorAll('.card.selected').forEach(card => {
+        card.classList.remove('selected');
+    });
+
+    // Add selection to new card
+    if (selectedId) {
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            if (card.getAttribute('onclick')?.includes(selectedId)) {
+                card.classList.add('selected');
+            }
+        });
+    }
+}
+
 
 /** Scroll to insight section */
 export function scrollToInsightSection(sectionId) {

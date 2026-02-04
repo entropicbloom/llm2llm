@@ -98,9 +98,10 @@ function renderConversationList() {
         const topTopics = Object.entries(topics).sort((a,b) => b[1] - a[1]).slice(0, 3);
         const isExpanded = state.expandedConvId === conv.id;
         const hasPreview = DATA.previews?.[conv.id]?.length >= 2;
+        const isSelected = state.selectedConversationId === conv.id;
 
         html += `
-            <div class="card" onclick="openConversation('${conv.id}')">
+            <div class="card${isSelected ? ' selected' : ''}" onclick="openConversation('${conv.id}')">
                 <div class="card-title">${conv.title || 'Untitled'}</div>
                 <div class="card-meta">
                     <span class="model-name">${shortModel(conv.llm1_model)}</span>
