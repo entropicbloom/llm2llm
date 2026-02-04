@@ -23,21 +23,36 @@
     if (!arr.length) return 0;
     return arr.reduce((a, b) => a + b, 0) / arr.length;
   }
+  function isDarkTheme() {
+    return document.documentElement.getAttribute("data-theme") !== "light";
+  }
   function metricColor(type, value, maxValue = 10) {
-    const hues = { depth: 220, warmth: 15, energy: 165, spirituality: 280 };
-    const hue = hues[type] || 220;
-    const normalized = Math.min(value / maxValue, 1);
-    const saturation = 8 + normalized * 37;
-    const lightness = 95 - normalized * 7;
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    const hues = { depth: 200, warmth: 25, energy: 160, spirituality: 270 };
+    const hue = hues[type] || 200;
+    const normalized = Math.min(Math.abs(value) / maxValue, 1);
+    if (isDarkTheme()) {
+      const saturation = 20 + normalized * 40;
+      const lightness = 8 + normalized * 12;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    } else {
+      const saturation = 15 + normalized * 35;
+      const lightness = 95 - normalized * 10;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
   }
   function metricTextColor(type, value, maxValue = 10) {
-    const hues = { depth: 220, warmth: 15, energy: 165, spirituality: 280 };
-    const hue = hues[type] || 220;
-    const normalized = Math.min(value / maxValue, 1);
-    const saturation = 30 + normalized * 30;
-    const lightness = 45 - normalized * 15;
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    const hues = { depth: 200, warmth: 25, energy: 160, spirituality: 270 };
+    const hue = hues[type] || 200;
+    const normalized = Math.min(Math.abs(value) / maxValue, 1);
+    if (isDarkTheme()) {
+      const saturation = 40 + normalized * 30;
+      const lightness = 60 + normalized * 25;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    } else {
+      const saturation = 40 + normalized * 30;
+      const lightness = 35 - normalized * 15;
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
   }
   function escapeHtml(text) {
     const div = document.createElement("div");
@@ -1107,6 +1122,7 @@
     setupNavigation();
     setupPanel();
     setupSegmentSelector();
+    setupThemeToggle();
     render();
   }
   function setupSegmentSelector() {
@@ -1153,6 +1169,28 @@
       if (e.key === "Escape") {
         closePanel();
       }
+    });
+  }
+  function setupThemeToggle() {
+    const toggle = document.getElementById("theme-toggle");
+    const root = document.documentElement;
+    const saved = localStorage.getItem("theme");
+    if (saved === "light") {
+      root.setAttribute("data-theme", "light");
+      toggle.textContent = "\u25D1";
+    }
+    toggle.addEventListener("click", () => {
+      const isLight = root.getAttribute("data-theme") === "light";
+      if (isLight) {
+        root.removeAttribute("data-theme");
+        toggle.textContent = "\u25D0";
+        localStorage.setItem("theme", "dark");
+      } else {
+        root.setAttribute("data-theme", "light");
+        toggle.textContent = "\u25D1";
+        localStorage.setItem("theme", "light");
+      }
+      render();
     });
   }
   function render() {

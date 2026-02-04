@@ -186,6 +186,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
                 <label>Segment:</label>
                 <select id="segment-select"></select>
             </div>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle theme">◐</button>
         </nav>
         <div id="app-body">
             <main id="main-content">

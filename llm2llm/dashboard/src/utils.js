@@ -20,22 +20,44 @@ export function avg(arr) {
     return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
+function isDarkTheme() {
+    return document.documentElement.getAttribute('data-theme') !== 'light';
+}
+
 export function metricColor(type, value, maxValue = 10) {
-    const hues = { depth: 220, warmth: 15, energy: 165, spirituality: 280 };
-    const hue = hues[type] || 220;
-    const normalized = Math.min(value / maxValue, 1);
-    const saturation = 8 + (normalized * 37);
-    const lightness = 95 - (normalized * 7);
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    const hues = { depth: 200, warmth: 25, energy: 160, spirituality: 270 };
+    const hue = hues[type] || 200;
+    const normalized = Math.min(Math.abs(value) / maxValue, 1);
+
+    if (isDarkTheme()) {
+        // Dark theme - low lightness backgrounds
+        const saturation = 20 + (normalized * 40);
+        const lightness = 8 + (normalized * 12);
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    } else {
+        // Light theme - high lightness backgrounds
+        const saturation = 15 + (normalized * 35);
+        const lightness = 95 - (normalized * 10);
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
 }
 
 export function metricTextColor(type, value, maxValue = 10) {
-    const hues = { depth: 220, warmth: 15, energy: 165, spirituality: 280 };
-    const hue = hues[type] || 220;
-    const normalized = Math.min(value / maxValue, 1);
-    const saturation = 30 + (normalized * 30);
-    const lightness = 45 - (normalized * 15);
-    return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    const hues = { depth: 200, warmth: 25, energy: 160, spirituality: 270 };
+    const hue = hues[type] || 200;
+    const normalized = Math.min(Math.abs(value) / maxValue, 1);
+
+    if (isDarkTheme()) {
+        // Dark theme - light text for contrast
+        const saturation = 40 + (normalized * 30);
+        const lightness = 60 + (normalized * 25);
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    } else {
+        // Light theme - dark text for contrast
+        const saturation = 40 + (normalized * 30);
+        const lightness = 35 - (normalized * 15);
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+    }
 }
 
 export function escapeHtml(text) {

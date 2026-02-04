@@ -1,4 +1,6 @@
 /* CSS Variables - Terminal Minimalist */
+
+/* Dark theme (default) */
 :root {
     --bg: #0a0a0a;
     --bg-secondary: #111111;
@@ -13,4 +15,21 @@
     --red: #ff4444;
     --purple: #aa88ff;
     --cyan: #00ddff;
+}
+
+/* Light theme */
+[data-theme="light"] {
+    --bg: #fafafa;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f0f0f0;
+    --text: #1a1a1a;
+    --text-muted: #666666;
+    --border: #d0d0d0;
+    --accent: #007755;
+    --accent-muted: #00775515;
+    --green: #007755;
+    --orange: #996600;
+    --red: #cc2222;
+    --purple: #6644aa;
+    --cyan: #0088aa;
 }
