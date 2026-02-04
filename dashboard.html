@@ -1404,6 +1404,11 @@ nav {
 
 /* Tablet: full-screen sidebar */
 @media (max-width: 1024px) {
+    /* Lock body scroll when panel covers content */
+    body:has(.detail-panel.visible) {
+        overflow: hidden;
+    }
+
     #app-body.panel-open {
         grid-template-columns: 1fr;
     }
@@ -1422,11 +1427,6 @@ nav {
 
 /* Mobile: bottom sheet pattern */
 @media (max-width: 768px) {
-    /* Lock body scroll when panel is open */
-    body:has(.detail-panel.visible) {
-        overflow: hidden;
-    }
-
     .detail-panel {
         top: auto;
         bottom: 0;
