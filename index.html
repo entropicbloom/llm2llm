@@ -1422,6 +1422,11 @@ nav {
 
 /* Mobile: bottom sheet pattern */
 @media (max-width: 768px) {
+    /* Lock body scroll when panel is open */
+    body:has(.detail-panel.visible) {
+        overflow: hidden;
+    }
+
     .detail-panel {
         top: auto;
         bottom: 0;
