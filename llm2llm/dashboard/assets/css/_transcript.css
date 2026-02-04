@@ -146,30 +146,9 @@
     color: var(--text-muted);
 }
 
-/* Mobile transcript improvements */
+/* Mobile */
 @media (max-width: 768px) {
-    .message {
-        padding: 12px 14px;
-    }
-
-    .message-content {
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    .message-header {
-        font-size: 11px;
-    }
-
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
-
-    .stat-value {
-        font-size: 24px;
-    }
-
-    .stat-label {
-        font-size: 9px;
     }
 }
