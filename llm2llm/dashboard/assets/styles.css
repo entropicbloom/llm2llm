@@ -115,7 +115,7 @@ nav {
     padding: 16px;
     cursor: pointer;
     transition: border-color 0.15s;
-    height: 140px;
+    height: 160px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -142,8 +142,10 @@ nav {
     font-weight: 600;
     margin-bottom: 4px;
     overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
 }
 
 .card-tags {
@@ -162,7 +164,7 @@ nav {
 
 .card:has(.preview-area.expanded) {
     height: auto;
-    min-height: 140px;
+    min-height: 160px;
 }
 
 .preview-area:hover {
