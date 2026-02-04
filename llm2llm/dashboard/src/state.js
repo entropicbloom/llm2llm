@@ -6,6 +6,8 @@ export const state = {
     searchTerm: '',
     filterModel: '',
     expandedConvId: null,
+    // Detail panel
+    selectedConversationId: null,
     // Models view
     modelSortAttribute: 'count',
     // Pairs view

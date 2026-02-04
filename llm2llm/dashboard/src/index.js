@@ -1,7 +1,7 @@
 // Dashboard entry point
 
 import { state } from './state.js';
-import { openConversation, closeModal, toggleConvs, scrollToInsightSection } from './ui.js';
+import { openConversation, closePanel, toggleConvs, scrollToInsightSection } from './ui.js';
 import { renderConversations, togglePreview } from './views/conversations.js';
 import { renderModels } from './views/models.js';
 import { renderPairs } from './views/pairs.js';
@@ -10,14 +10,14 @@ import { renderInsights } from './views/insights.js';
 
 // Expose functions to global scope for onclick handlers
 window.openConversation = openConversation;
-window.closeModal = closeModal;
+window.closePanel = closePanel;
 window.toggleConvs = toggleConvs;
 window.scrollToInsightSection = scrollToInsightSection;
 window.togglePreview = togglePreview;
 
 function init() {
     setupNavigation();
-    setupModal();
+    setupPanel();
     setupSegmentSelector();
     render();
 }
@@ -68,14 +68,15 @@ function setupNavigation() {
     });
 }
 
-function setupModal() {
-    const modal = document.getElementById('modal');
-    modal.querySelector('.modal-close').addEventListener('click', closeModal);
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
+function setupPanel() {
+    const panel = document.getElementById('detail-panel');
+    panel.querySelector('.panel-close').addEventListener('click', closePanel);
+
+    // ESC key closes panel
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeModal();
+        if (e.key === 'Escape') {
+            closePanel();
+        }
     });
 }
 
