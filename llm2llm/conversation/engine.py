@@ -1,8 +1,13 @@
 """Conversation engine - manages the turn-by-turn conversation between LLMs."""
 
+import time
 from typing import Callable
 
 from ..config import Config, SYSTEM_PROMPT_INITIATOR, SYSTEM_PROMPT_RESPONDER
+
+# Retry settings for empty responses
+MAX_RETRIES = 3
+RETRY_DELAY_SECONDS = 2
 from ..models.base import get_provider_for_model, get_api_key_for_model
 from .schemas import Conversation, ConversationStatus, ParticipantRole
 from .storage import ConversationStorage
@@ -121,12 +126,30 @@ class ConversationEngine:
             if not history:
                 history = [{"role": "user", "content": "Please begin."}]
 
-            # Generate response
-            response = provider.generate(
-                model_id=model_id,
-                system_prompt=system_prompt,
-                messages=history,
-            )
+            # Generate response with retry logic for empty responses
+            response = None
+            last_error = None
+            for attempt in range(MAX_RETRIES):
+                try:
+                    response = provider.generate(
+                        model_id=model_id,
+                        system_prompt=system_prompt,
+                        messages=history,
+                    )
+                    # Check for soft empty response
+                    if response and response != "(no output)":
+                        break
+                    # Got empty/no output, will retry
+                    last_error = ValueError(f"Empty response from {model_id}")
+                except ValueError as e:
+                    last_error = e
+
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(RETRY_DELAY_SECONDS)
+
+            # If all retries failed, raise the last error
+            if response is None or response == "(no output)":
+                raise last_error or ValueError(f"Empty response from {model_id} after {MAX_RETRIES} retries")
 
             # Add message to conversation
             conversation.add_message(
