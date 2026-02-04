@@ -5,6 +5,8 @@
     padding: 16px;
     cursor: pointer;
     transition: border-color 0.1s;
+    display: flex;
+    flex-direction: column;
 }
 
 .card:hover {
@@ -42,6 +44,7 @@
 
 .card-tags {
     min-height: 24px;
+    flex: 1;
 }
 
 .card-meta {
