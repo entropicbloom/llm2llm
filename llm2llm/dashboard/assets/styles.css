@@ -1001,7 +1001,7 @@ nav {
 }
 
 #app-body.panel-open {
-    grid-template-columns: 1fr 480px;
+    grid-template-columns: 1fr minmax(400px, 50%);
 }
 
 #main-content {
@@ -1013,7 +1013,9 @@ nav {
     position: fixed;
     top: 0;
     right: 0;
-    width: 480px;
+    width: 50%;
+    min-width: 400px;
+    max-width: 800px;
     height: 100vh;
     background: var(--bg);
     border-left: 1px solid var(--border);
@@ -1072,7 +1074,10 @@ nav {
 
     .detail-panel {
         width: 100%;
+        min-width: unset;
+        max-width: unset;
         box-shadow: none;
+        border-left: none;
     }
 
     .detail-panel.visible {
