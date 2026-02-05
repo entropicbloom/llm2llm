@@ -666,14 +666,17 @@
     // teal/green
     google: ["#1E40AF", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"],
     // blue (gemini)
+    qwen: ["#5B21B6", "#7C3AED", "#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE"],
+    // purple
     default: ["#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
     // gray
   };
   function getProvider(model) {
     if (model.startsWith("claude-")) return "anthropic";
     if (model.startsWith("mistralai/")) return "mistral";
-    if (model.startsWith("gpt-")) return "openai";
+    if (model.startsWith("gpt-") || model.startsWith("openai/")) return "openai";
     if (model.startsWith("google/")) return "google";
+    if (model.startsWith("qwen/")) return "qwen";
     return "default";
   }
   function showPairInPanel(pair, modelColorMap) {

@@ -28,6 +28,11 @@
 
 #conversation-list .card {
     border: none;
+    border-left: 2px solid transparent;
+}
+
+#conversation-list .card:hover {
+    border-left-color: var(--accent);
 }
 
 @media (max-width: 800px) {
@@ -182,7 +187,6 @@
 }
 
 .mini-card:hover {
-    background: var(--bg-secondary);
     border-left-color: var(--accent);
 }
 

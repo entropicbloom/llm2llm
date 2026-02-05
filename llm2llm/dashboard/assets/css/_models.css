@@ -87,11 +87,12 @@
     gap: 16px;
     background: var(--bg-secondary);
     padding: 16px;
-    transition: background 0.1s;
+    border-left: 2px solid transparent;
+    transition: border-color 0.1s;
 }
 
 .ranking-item:hover {
-    background: var(--bg-tertiary);
+    border-left-color: var(--accent);
 }
 
 .ranking-position {
