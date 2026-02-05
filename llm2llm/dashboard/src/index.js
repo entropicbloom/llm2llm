@@ -85,11 +85,11 @@ function setupThemeToggle() {
     const toggle = document.getElementById('theme-toggle');
     const root = document.documentElement;
 
-    // Check saved preference
+    // Check saved preference (default is light)
     const saved = localStorage.getItem('theme');
-    if (saved === 'light') {
-        root.setAttribute('data-theme', 'light');
-        toggle.textContent = '◑';
+    if (saved === 'dark') {
+        root.removeAttribute('data-theme');
+        toggle.textContent = '◐';
     }
 
     toggle.addEventListener('click', () => {

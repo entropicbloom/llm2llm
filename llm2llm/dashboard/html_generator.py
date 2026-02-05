@@ -152,7 +152,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
 
     # Generate HTML
     html = f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -172,6 +172,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
                 <div class="logo-text">[LLM→LLM]</div>
                 <p class="subtitle">{data["total_conversations"]} conversations analyzed</p>
             </div>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle theme">◑</button>
         </header>
         <nav>
             <button class="nav-btn active" data-view="conversations">Conversations</button>
@@ -183,7 +184,6 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
                 <label>Segment:</label>
                 <select id="segment-select"></select>
             </div>
-            <button id="theme-toggle" class="theme-toggle" title="Toggle theme">◐</button>
         </nav>
         <div id="app-body">
             <main id="main-content">

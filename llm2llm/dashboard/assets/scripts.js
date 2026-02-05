@@ -1175,9 +1175,9 @@
     const toggle = document.getElementById("theme-toggle");
     const root = document.documentElement;
     const saved = localStorage.getItem("theme");
-    if (saved === "light") {
-      root.setAttribute("data-theme", "light");
-      toggle.textContent = "\u25D1";
+    if (saved === "dark") {
+      root.removeAttribute("data-theme");
+      toggle.textContent = "\u25D0";
     }
     toggle.addEventListener("click", () => {
       const isLight = root.getAttribute("data-theme") === "light";
