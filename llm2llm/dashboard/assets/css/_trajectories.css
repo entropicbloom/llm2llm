@@ -1,0 +1,229 @@
+/* Trajectories view - Terminal Minimalist */
+.traj-controls {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.traj-controls label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.traj-controls select {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.traj-mode-tabs {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+}
+
+.traj-mode-btn {
+    background: var(--bg-secondary);
+    border: none;
+    color: var(--text-muted);
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: background 0.1s, color 0.1s;
+}
+
+.traj-mode-btn:not(:last-child) {
+    border-right: 1px solid var(--border);
+}
+
+.traj-mode-btn:hover {
+    background: var(--bg-tertiary);
+}
+
+.traj-mode-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+}
+
+.traj-toggle {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.traj-toggle input[type="checkbox"],
+.traj-toggle input[type="range"] {
+    accent-color: var(--accent);
+}
+
+.traj-toggle input[type="range"] {
+    width: 60px;
+    height: 2px;
+}
+
+.traj-slider-wide {
+    width: 120px !important;
+}
+
+.traj-slider-group label:not(:first-child) {
+    margin-left: 12px;
+}
+
+.traj-slider-group .legend-reset {
+    margin-left: 12px;
+}
+
+.traj-toggle label {
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+#traj-container {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+#traj-svg {
+    display: block;
+    width: 100%;
+}
+
+.traj-tooltip {
+    position: absolute;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 12px;
+    pointer-events: none;
+    z-index: 100;
+    max-width: 280px;
+    font-size: 11px;
+}
+
+.traj-tooltip.hidden {
+    display: none;
+}
+
+.traj-tooltip .tt-pair {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.traj-tooltip .tt-detail {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.traj-legend {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+}
+
+.legend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.traj-legend .legend-title {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.legend-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.legend-reset {
+    font-size: 10px;
+    color: var(--accent);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.legend-reset:hover {
+    text-decoration: underline;
+}
+
+.traj-legend .legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.traj-legend .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    transition: background 0.1s;
+    cursor: pointer;
+}
+
+.traj-legend .legend-item:hover {
+    background: var(--bg-tertiary);
+}
+
+.traj-legend .legend-item.dimmed {
+    opacity: 0.3;
+}
+
+.traj-legend .legend-color {
+    width: 16px;
+    height: 3px;
+}
+
+.traj-legend .legend-label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+.traj-point {
+    transition: fill 0.15s, r 0.1s;
+}
+
+.traj-point.traj-dimmed {
+    fill: #555 !important;
+    opacity: 0.25 !important;
+}
+
+.traj-point.traj-highlighted {
+    /* r set in JS to stay scale-aware */
+}
+
+.traj-start {
+    fill: none;
+    stroke-width: 1.5;
+    transition: stroke 0.15s;
+}
+
+.traj-start.traj-dimmed {
+    stroke: #555 !important;
+    opacity: 0.25 !important;
+}
+
+.traj-start.traj-highlighted {
+    stroke-width: 2.5;
+    r: 6;
+}

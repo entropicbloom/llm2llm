@@ -12,4 +12,8 @@ export const state = {
     modelSortAttribute: 'count',
     // Pairs view
     rankingAttribute: 'depth',
+    // Trajectories view
+    trajHiddenPairs: new Set(),
+    trajPointRange: 'all',      // 'all', 'first5', 'last5'
+    trajDotSize: 3,
 };

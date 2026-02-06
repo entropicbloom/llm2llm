@@ -12,10 +12,53 @@
     // Models view
     modelSortAttribute: "count",
     // Pairs view
-    rankingAttribute: "depth"
+    rankingAttribute: "depth",
+    // Trajectories view
+    trajHiddenPairs: /* @__PURE__ */ new Set(),
+    trajPointRange: "all",
+    // 'all', 'first5', 'last5'
+    trajDotSize: 3
   };
 
   // llm2llm/dashboard/src/utils.js
+  var PROVIDER_COLORS = {
+    anthropic: ["#8B6914", "#A67C00", "#C9A227", "#D4AF37", "#E6C55B", "#F0D77B"],
+    // bronze/gold
+    mistral: ["#CC5500", "#E86A17", "#FF7F2A", "#FF944D", "#FFAA70", "#FFBF94"],
+    // orange
+    openai: ["#10A37F", "#1DBF8E", "#3DD9A5", "#5EEDB8", "#7FFFD4", "#A0FFE0"],
+    // teal/green
+    google: ["#1E40AF", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"],
+    // blue (gemini)
+    qwen: ["#7C3AED", "#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE", "#EDE9FE"],
+    // purple
+    moonshot: ["#DC2626", "#EF4444", "#F87171", "#FCA5A5", "#FECACA", "#FEE2E2"],
+    // red
+    default: ["#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
+    // gray
+  };
+  function getProvider(model) {
+    if (model.startsWith("claude-")) return "anthropic";
+    if (model.startsWith("mistralai/")) return "mistral";
+    if (model.startsWith("openai/gpt") || model.startsWith("gpt-")) return "openai";
+    if (model.startsWith("google/")) return "google";
+    if (model.startsWith("qwen/")) return "qwen";
+    if (model.startsWith("moonshotai/")) return "moonshot";
+    return "default";
+  }
+  function buildModelColorMap(models) {
+    const modelList = [...models].sort();
+    const map = {};
+    const providerCounts = {};
+    modelList.forEach((model) => {
+      const provider = getProvider(model);
+      const colors = PROVIDER_COLORS[provider] || PROVIDER_COLORS.default;
+      const idx = providerCounts[provider] || 0;
+      map[model] = colors[idx % colors.length];
+      providerCounts[provider] = idx + 1;
+    });
+    return map;
+  }
   function shortModel(model) {
     return model.replace("claude-", "").replace("mistralai/", "").replace("-20250514", "").replace("-20250929", "").replace("-20251001", "").replace("-20251101", "").replace("-20240229", "").replace("-20241022", "").replace("-20240307", "").replace("-20250219", "").replace("-20250805", "");
   }
@@ -703,28 +746,6 @@
   }
 
   // llm2llm/dashboard/src/views/maps.js
-  var PROVIDER_COLORS = {
-    anthropic: ["#8B6914", "#A67C00", "#C9A227", "#D4AF37", "#E6C55B", "#F0D77B"],
-    // bronze/gold
-    mistral: ["#CC5500", "#E86A17", "#FF7F2A", "#FF944D", "#FFAA70", "#FFBF94"],
-    // orange
-    openai: ["#10A37F", "#1DBF8E", "#3DD9A5", "#5EEDB8", "#7FFFD4", "#A0FFE0"],
-    // teal/green
-    google: ["#1E40AF", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE"],
-    // blue (gemini)
-    qwen: ["#5B21B6", "#7C3AED", "#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE"],
-    // purple
-    default: ["#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
-    // gray
-  };
-  function getProvider(model) {
-    if (model.startsWith("claude-")) return "anthropic";
-    if (model.startsWith("mistralai/")) return "mistral";
-    if (model.startsWith("gpt-") || model.startsWith("openai/")) return "openai";
-    if (model.startsWith("google/")) return "google";
-    if (model.startsWith("qwen/")) return "qwen";
-    return "default";
-  }
   function showPairInPanel(pair, modelColorMap) {
     const panel = document.getElementById("detail-panel");
     const body = document.getElementById("panel-body");
@@ -869,15 +890,7 @@
       allModels.add(a.llm2_model);
     }
     const modelList = [...allModels].sort();
-    const modelColorMap = {};
-    const providerCounts = {};
-    modelList.forEach((model) => {
-      const provider = getProvider(model);
-      const colors = PROVIDER_COLORS[provider] || PROVIDER_COLORS.default;
-      const idx = providerCounts[provider] || 0;
-      modelColorMap[model] = colors[idx % colors.length];
-      providerCounts[provider] = idx + 1;
-    });
+    const modelColorMap = buildModelColorMap(allModels);
     const pairMap = {};
     for (const a of analyses) {
       const pairKey = `${a.llm1_model}|${a.llm2_model}`;
@@ -1163,6 +1176,366 @@
     container.innerHTML = html;
   }
 
+  // llm2llm/dashboard/src/views/trajectories.js
+  var vt = { x: 0, y: 0, scale: 1 };
+  function convHue(index) {
+    return index * 137.508 % 360;
+  }
+  function getPairKey(conv) {
+    return `${conv.llm1_model}|${conv.llm2_model}`;
+  }
+  function getPairLabel(conv) {
+    return `${shortModel(conv.llm1_model)} + ${shortModel(conv.llm2_model)}`;
+  }
+  function isSelfTalk(conv) {
+    return conv.llm1_model === conv.llm2_model;
+  }
+  function getAllPairKeys() {
+    const keys = /* @__PURE__ */ new Set();
+    for (const conv of Object.values(TRAJECTORY_DATA)) {
+      keys.add(getPairKey(conv));
+    }
+    return keys;
+  }
+  function getCrossModelPairKeys() {
+    const keys = /* @__PURE__ */ new Set();
+    for (const conv of Object.values(TRAJECTORY_DATA)) {
+      if (!isSelfTalk(conv)) keys.add(getPairKey(conv));
+    }
+    return keys;
+  }
+  function _isSelfMode() {
+    const btn = document.querySelector('.traj-mode-btn[data-mode="self"]');
+    return btn && btn.classList.contains("active");
+  }
+  function isPairVisible(pairKey) {
+    const hidden = state.trajHiddenPairs;
+    if (!hidden || hidden.size === 0) return true;
+    return !hidden.has(pairKey);
+  }
+  function renderTrajectories(container) {
+    if (typeof TRAJECTORY_DATA === "undefined" || !TRAJECTORY_DATA || Object.keys(TRAJECTORY_DATA).length === 0) {
+      container.innerHTML = `
+            <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                <p>No trajectory data available.</p>
+                <p style="font-size: 12px; margin-top: 8px;">
+                    Run <code>llm2llm embed</code> then <code>llm2llm trajectories</code> to generate.
+                </p>
+            </div>
+        `;
+      return;
+    }
+    if (!document.getElementById("traj-container")) {
+      container.innerHTML = `
+            <div class="traj-controls">
+                <div class="traj-mode-tabs">
+                    <button class="traj-mode-btn active" data-mode="all">All</button>
+                    <button class="traj-mode-btn" data-mode="self">Self-talk</button>
+                </div>
+                <div class="traj-mode-tabs traj-range-tabs">
+                    <button class="traj-mode-btn active" data-range="all">All</button>
+                    <button class="traj-mode-btn" data-range="first5">First 5</button>
+                    <button class="traj-mode-btn" data-range="last5">Last 5</button>
+                </div>
+                <div class="traj-toggle traj-slider-group">
+                    <label for="traj-dot-size">Size</label>
+                    <input type="range" id="traj-dot-size" min="1" max="8" step="0.5" value="3" class="traj-slider-wide">
+                    <label for="traj-zoom">Zoom</label>
+                    <input type="range" id="traj-zoom" min="0.5" max="10" step="0.1" value="1" class="traj-slider-wide">
+                    <span class="legend-reset" id="traj-reset-sliders">Reset</span>
+                </div>
+            </div>
+            <div id="traj-container">
+                <svg id="traj-svg"></svg>
+                <div id="traj-tooltip" class="traj-tooltip hidden"></div>
+            </div>
+            <div id="traj-legend" class="traj-legend"></div>
+        `;
+      container.querySelectorAll(".traj-mode-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          container.querySelectorAll(".traj-mode-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          if (btn.dataset.mode === "self") {
+            state.trajHiddenPairs = getCrossModelPairKeys();
+          } else {
+            state.trajHiddenPairs = /* @__PURE__ */ new Set();
+          }
+          renderTrajectorySVG();
+        });
+      });
+      container.querySelectorAll(".traj-range-tabs .traj-mode-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          container.querySelectorAll(".traj-range-tabs .traj-mode-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          state.trajPointRange = btn.dataset.range;
+          renderTrajectorySVG();
+        });
+      });
+      document.getElementById("traj-zoom").addEventListener("input", (e) => {
+        const newScale = parseFloat(e.target.value);
+        const svg = document.getElementById("traj-svg");
+        const rect = svg.getBoundingClientRect();
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        const ratio = newScale / vt.scale;
+        vt.x = cx - ratio * (cx - vt.x);
+        vt.y = cy - ratio * (cy - vt.y);
+        vt.scale = newScale;
+        applyViewTransform(svg);
+      });
+      document.getElementById("traj-reset-sliders").addEventListener("click", () => {
+        state.trajDotSize = 3;
+        vt = { x: 0, y: 0, scale: 1 };
+        document.getElementById("traj-dot-size").value = 3;
+        document.getElementById("traj-zoom").value = 1;
+        const svg = document.getElementById("traj-svg");
+        if (svg) applyViewTransform(svg);
+      });
+      document.getElementById("traj-dot-size").addEventListener("input", (e) => {
+        state.trajDotSize = parseFloat(e.target.value);
+        const svg = document.getElementById("traj-svg");
+        if (svg) {
+          const r = state.trajDotSize / vt.scale;
+          svg.querySelectorAll(".traj-point").forEach((p) => p.setAttribute("r", r));
+        }
+      });
+    }
+    renderTrajectorySVG();
+  }
+  function renderTrajectorySVG() {
+    const svg = document.getElementById("traj-svg");
+    const container = document.getElementById("traj-container");
+    const tooltip = document.getElementById("traj-tooltip");
+    const legend = document.getElementById("traj-legend");
+    if (!svg || !container) return;
+    const selfMode = _isSelfMode();
+    const modelColorMap = selfMode ? buildModelColorMap(
+      new Set(Object.values(TRAJECTORY_DATA).flatMap((c) => [c.llm1_model, c.llm2_model]))
+    ) : null;
+    const width = container.clientWidth || 800;
+    const height = 550;
+    const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    svg.setAttribute("width", width);
+    svg.setAttribute("height", height);
+    const convEntries = Object.entries(TRAJECTORY_DATA).filter(([, conv]) => {
+      return isPairVisible(getPairKey(conv));
+    });
+    const allConvIds = Object.keys(TRAJECTORY_DATA).sort();
+    const convIndex = {};
+    allConvIds.forEach((id, i) => {
+      convIndex[id] = i;
+    });
+    const scaleX = (v) => margin.left + (v + 1) / 2 * plotWidth;
+    const scaleY = (v) => margin.top + plotHeight - (v + 1) / 2 * plotHeight;
+    let svgContent = `<g id="traj-viewport" transform="translate(${vt.x},${vt.y}) scale(${vt.scale})">`;
+    svgContent += `<rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="var(--border)" stroke-dasharray="2,2" opacity="0.3" />`;
+    const ox = scaleX(0), oy = scaleY(0);
+    svgContent += `<line x1="${margin.left}" y1="${oy}" x2="${margin.left + plotWidth}" y2="${oy}" stroke="var(--border)" stroke-dasharray="4,4" opacity="0.3" />`;
+    svgContent += `<line x1="${ox}" y1="${margin.top}" x2="${ox}" y2="${margin.top + plotHeight}" stroke="var(--border)" stroke-dasharray="4,4" opacity="0.3" />`;
+    const pointRange = state.trajPointRange || "all";
+    function filterRange(pts) {
+      if (pointRange === "first5") return pts.slice(0, 5);
+      if (pointRange === "last5") return pts.slice(-5);
+      return pts;
+    }
+    for (const [convId, conv] of convEntries) {
+      const points = filterRange(conv.points);
+      if (!points || points.length === 0) continue;
+      const totalTurns = conv.points.length;
+      if (selfMode && isSelfTalk(conv)) {
+        const color = modelColorMap[conv.llm1_model];
+        drawDots(points, convId, totalTurns, color);
+      } else {
+        const hue = convHue(convIndex[convId]);
+        drawDotsHsl(points, convId, totalTurns, hue);
+      }
+    }
+    function drawDots(pts, convId, totalTurns, color) {
+      for (const pt of pts) {
+        const opacity = 0.4 + 0.6 * (pt.turn / totalTurns);
+        svgContent += `<circle cx="${scaleX(pt.x)}" cy="${scaleY(pt.y)}" r="${state.trajDotSize}" fill="${color}" opacity="${opacity.toFixed(2)}" class="traj-point"
+                data-conv="${convId}" data-turn="${pt.turn}" data-role="${pt.role}" style="cursor: pointer;" />`;
+      }
+    }
+    function drawDotsHsl(pts, convId, totalTurns, hue) {
+      for (const pt of pts) {
+        const progress = pt.turn / totalTurns;
+        const lightness = 80 - progress * 40;
+        const color = `hsl(${hue}, 65%, ${lightness}%)`;
+        svgContent += `<circle cx="${scaleX(pt.x)}" cy="${scaleY(pt.y)}" r="${state.trajDotSize}" fill="${color}" class="traj-point"
+                data-conv="${convId}" data-turn="${pt.turn}" data-role="${pt.role}" style="cursor: pointer;" />`;
+      }
+    }
+    svgContent += "</g>";
+    svg.innerHTML = svgContent;
+    setupPanZoom(svg, container);
+    const allPoints = svg.querySelectorAll(".traj-point, .traj-start");
+    allPoints.forEach((point) => {
+      point.addEventListener("mouseenter", (e) => {
+        const hoveredConv = e.target.dataset.conv;
+        const r = state.trajDotSize / vt.scale;
+        const rHover = (state.trajDotSize + 1) / vt.scale;
+        allPoints.forEach((p) => {
+          if (p.dataset.conv !== hoveredConv) {
+            p.classList.add("traj-dimmed");
+          } else {
+            p.classList.add("traj-highlighted");
+            p.setAttribute("r", rHover);
+          }
+        });
+        const conv = TRAJECTORY_DATA[hoveredConv];
+        if (conv) {
+          const turn = e.target.dataset.turn || "1";
+          const role = e.target.dataset.role || "";
+          const dataConv = typeof DATA !== "undefined" && DATA.conversations ? DATA.conversations.find((c) => c.id === hoveredConv) : null;
+          const title = dataConv && dataConv.title ? dataConv.title : hoveredConv.slice(0, 8) + "...";
+          tooltip.innerHTML = `
+                    <div class="tt-pair">${getPairLabel(conv)}</div>
+                    <div class="tt-detail">Turn ${turn}${role ? " \xB7 " + role : ""}</div>
+                    <div class="tt-detail">${title}</div>
+                `;
+          tooltip.classList.remove("hidden");
+          const rect = container.getBoundingClientRect();
+          tooltip.style.left = e.clientX - rect.left + 12 + "px";
+          tooltip.style.top = e.clientY - rect.top - 12 + "px";
+        }
+      });
+      point.addEventListener("mouseleave", () => {
+        const r = state.trajDotSize / vt.scale;
+        allPoints.forEach((p) => {
+          p.classList.remove("traj-dimmed");
+          p.classList.remove("traj-highlighted");
+          p.setAttribute("r", r);
+        });
+        tooltip.classList.add("hidden");
+      });
+      point.addEventListener("click", (e) => {
+        const convId = e.target.dataset.conv;
+        const turn = parseInt(e.target.dataset.turn, 10);
+        if (typeof window.openConversation === "function") {
+          window.openConversation(convId, turn);
+        }
+      });
+    });
+    const allPairs = getAllPairKeys();
+    const hidden = state.trajHiddenPairs || /* @__PURE__ */ new Set();
+    const hasFilter = hidden.size > 0;
+    const pairInfo = /* @__PURE__ */ new Map();
+    for (const [convId, conv] of Object.entries(TRAJECTORY_DATA)) {
+      if (selfMode && !isSelfTalk(conv)) continue;
+      const pk = getPairKey(conv);
+      if (!pairInfo.has(pk)) {
+        pairInfo.set(pk, { label: getPairLabel(conv), convIds: [], conv });
+      }
+      pairInfo.get(pk).convIds.push(convId);
+    }
+    const sortedPairInfo = [...pairInfo.entries()].sort((a, b) => a[1].label.localeCompare(b[1].label));
+    let legendHtml = `<div class="legend-header"><span class="legend-title">Pairs</span><span class="legend-actions">`;
+    if (hasFilter) {
+      legendHtml += `<span class="legend-reset" id="traj-reset-filter">Show all</span>`;
+    }
+    legendHtml += `<span class="legend-reset" id="traj-hide-all">Hide all</span>`;
+    legendHtml += '</span></div><div class="legend-items">';
+    for (const [key, info] of sortedPairInfo) {
+      const isVisible = !hidden.has(key);
+      let color;
+      if (selfMode && isSelfTalk(info.conv)) {
+        color = modelColorMap[info.conv.llm1_model];
+      } else {
+        const firstConvId = info.convIds[0];
+        const hue = convHue(convIndex[firstConvId]);
+        color = `hsl(${hue}, 65%, 60%)`;
+      }
+      const label = selfMode && isSelfTalk(info.conv) ? `${shortModel(info.conv.llm1_model)} (${info.convIds.length})` : `${info.label} (${info.convIds.length})`;
+      legendHtml += `
+            <div class="legend-item ${isVisible ? "" : "dimmed"}" data-pair="${key}" style="cursor: pointer;">
+                <span class="legend-color" style="background: ${color}"></span>
+                <span class="legend-label">${label}</span>
+            </div>
+        `;
+    }
+    legendHtml += "</div>";
+    legend.innerHTML = legendHtml;
+    legend.querySelectorAll(".legend-item").forEach((item) => {
+      item.addEventListener("click", () => {
+        const pair = item.dataset.pair;
+        if (!state.trajHiddenPairs) state.trajHiddenPairs = /* @__PURE__ */ new Set();
+        if (state.trajHiddenPairs.has(pair)) {
+          state.trajHiddenPairs.delete(pair);
+        } else {
+          state.trajHiddenPairs.add(pair);
+        }
+        renderTrajectorySVG();
+      });
+    });
+    const resetBtn = document.getElementById("traj-reset-filter");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        state.trajHiddenPairs = /* @__PURE__ */ new Set();
+        renderTrajectorySVG();
+      });
+    }
+    const hideBtn = document.getElementById("traj-hide-all");
+    if (hideBtn) {
+      hideBtn.addEventListener("click", () => {
+        state.trajHiddenPairs = new Set(allPairs);
+        renderTrajectorySVG();
+      });
+    }
+  }
+  function applyViewTransform(svg) {
+    const g = svg.getElementById("traj-viewport");
+    if (g) g.setAttribute("transform", `translate(${vt.x},${vt.y}) scale(${vt.scale})`);
+    const r = state.trajDotSize / vt.scale;
+    svg.querySelectorAll(".traj-point").forEach((p) => p.setAttribute("r", r));
+    const slider = document.getElementById("traj-zoom");
+    if (slider) slider.value = vt.scale;
+  }
+  function setupPanZoom(svg, container) {
+    let isPanning = false;
+    let startX, startY, startVtX, startVtY;
+    svg.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const rect = svg.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const newScale = Math.min(Math.max(vt.scale * factor, 0.5), 10);
+      const ratio = newScale / vt.scale;
+      vt.x = mx - ratio * (mx - vt.x);
+      vt.y = my - ratio * (my - vt.y);
+      vt.scale = newScale;
+      applyViewTransform(svg);
+    }, { passive: false });
+    svg.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      isPanning = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startVtX = vt.x;
+      startVtY = vt.y;
+      svg.style.cursor = "grabbing";
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!isPanning) return;
+      vt.x = startVtX + (e.clientX - startX);
+      vt.y = startVtY + (e.clientY - startY);
+      applyViewTransform(svg);
+    });
+    window.addEventListener("mouseup", () => {
+      if (isPanning) {
+        isPanning = false;
+        svg.style.cursor = "";
+      }
+    });
+    svg.addEventListener("dblclick", () => {
+      vt = { x: 0, y: 0, scale: 1 };
+      applyViewTransform(svg);
+    });
+  }
+
   // llm2llm/dashboard/src/index.js
   window.openConversation = openConversation;
   window.closePanel = closePanel;
@@ -1232,6 +1605,9 @@
     } else if (state.currentView === "maps") {
       if (!document.getElementById("map-container")) main.innerHTML = "";
       renderMaps(main);
+    } else if (state.currentView === "trajectories") {
+      if (!document.getElementById("traj-container")) main.innerHTML = "";
+      renderTrajectories(main);
     } else if (state.currentView === "insights") {
       main.innerHTML = "";
       renderInsights(main);
