@@ -180,10 +180,6 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             <button class="nav-btn" data-view="pairs">Pairs</button>
             <button class="nav-btn" data-view="maps">Maps</button>
             <button class="nav-btn" data-view="insights">Insights</button>
-            <div class="segment-selector">
-                <label>Segment:</label>
-                <select id="segment-select"></select>
-            </div>
         </nav>
         <div id="app-body">
             <main id="main-content">

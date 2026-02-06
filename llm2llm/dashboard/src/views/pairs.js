@@ -3,6 +3,7 @@
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
 import { shortModel, avg, metricColor, metricTextColor } from '../utils.js';
+import { getSegmentSelectorHTML, attachSegmentListener } from '../segment.js';
 
 export function renderPairs(container) {
     const analyses = getFilteredAnalyses();
@@ -132,6 +133,7 @@ export function renderPairs(container) {
                 </optgroup>
             </select>
             <span style="color: var(--text-muted); font-size: 12px;">${sorted.length} pairs</span>
+            ${getSegmentSelectorHTML()}
         </div>
         <div class="ranking-list">
     `;
@@ -187,4 +189,5 @@ export function renderPairs(container) {
         state.rankingAttribute = e.target.value;
         renderPairs(container);
     });
+    attachSegmentListener();
 }

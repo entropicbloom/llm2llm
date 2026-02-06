@@ -3,6 +3,7 @@
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
 import { shortModel, truncateText } from '../utils.js';
+import { getSegmentSelectorHTML, attachSegmentListener } from '../segment.js';
 
 /** Toggle conversation preview (accordion-style) */
 export function togglePreview(convId, event) {
@@ -57,6 +58,7 @@ export function renderConversations(container) {
                     <option value="">All models</option>
                     ${DATA.models.map(m => `<option value="${m}" ${state.filterModel === m ? 'selected' : ''}>${shortModel(m)}</option>`).join('')}
                 </select>
+                ${getSegmentSelectorHTML()}
             </div>
             <div id="conversation-list"></div>
         `;
@@ -69,6 +71,7 @@ export function renderConversations(container) {
             state.filterModel = e.target.value;
             renderConversationList();
         });
+        attachSegmentListener();
     }
 
     renderConversationList();

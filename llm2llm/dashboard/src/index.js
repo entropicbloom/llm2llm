@@ -2,6 +2,7 @@
 
 import { state } from './state.js';
 import { openConversation, closePanel, toggleConvs, scrollToInsightSection } from './ui.js';
+import { buildSegmentOptions } from './segment.js';
 import { renderConversations, togglePreview } from './views/conversations.js';
 import { renderModels } from './views/models.js';
 import { renderPairs } from './views/pairs.js';
@@ -16,46 +17,12 @@ window.scrollToInsightSection = scrollToInsightSection;
 window.togglePreview = togglePreview;
 
 function init() {
+    buildSegmentOptions(); // set default segment
     setupNavigation();
     setupPanel();
-    setupSegmentSelector();
     setupThemeToggle();
+    document.addEventListener('segment-change', () => render());
     render();
-}
-
-function setupSegmentSelector() {
-    const select = document.getElementById('segment-select');
-
-    const segments = new Map();
-    segments.set('all', 'All segments');
-
-    for (const a of DATA.analyses) {
-        const key = `${a.segment_start}:${a.segment_end === null ? '' : a.segment_end}`;
-        if (!segments.has(key)) {
-            const label = a.segment_end === null
-                ? `[${a.segment_start}:] (last ${Math.abs(a.segment_start)})`
-                : `[${a.segment_start}:${a.segment_end}]`;
-            segments.set(key, label);
-        }
-    }
-
-    for (const [value, label] of segments) {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        select.appendChild(option);
-    }
-
-    if (segments.size > 1) {
-        const firstSegment = Array.from(segments.keys())[1];
-        select.value = firstSegment;
-        state.selectedSegment = firstSegment;
-    }
-
-    select.addEventListener('change', (e) => {
-        state.selectedSegment = e.target.value;
-        render();
-    });
 }
 
 function setupNavigation() {

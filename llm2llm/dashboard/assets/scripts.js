@@ -223,6 +223,46 @@
     }
   }
 
+  // llm2llm/dashboard/src/segment.js
+  var segmentOptions = null;
+  function buildSegmentOptions() {
+    const segments = /* @__PURE__ */ new Map();
+    segments.set("all", "All segments");
+    for (const a of DATA.analyses) {
+      const key = `${a.segment_start}:${a.segment_end === null ? "" : a.segment_end}`;
+      if (!segments.has(key)) {
+        const label = a.segment_end === null ? `[${a.segment_start}:] (last ${Math.abs(a.segment_start)})` : `[${a.segment_start}:${a.segment_end}]`;
+        segments.set(key, label);
+      }
+    }
+    if (state.selectedSegment === "all" && segments.size > 1) {
+      state.selectedSegment = Array.from(segments.keys())[1];
+    }
+    segmentOptions = segments;
+    return segments;
+  }
+  function getSegmentSelectorHTML() {
+    const segments = segmentOptions || buildSegmentOptions();
+    if (segments.size <= 1) return "";
+    const options = Array.from(segments).map(
+      ([value, label]) => `<option value="${value}" ${state.selectedSegment === value ? "selected" : ""}>${label}</option>`
+    ).join("");
+    return `
+        <div class="segment-selector">
+            <label>Analyzed segment:</label>
+            <select id="segment-select">${options}</select>
+        </div>
+    `;
+  }
+  function attachSegmentListener() {
+    const select = document.getElementById("segment-select");
+    if (!select) return;
+    select.addEventListener("change", (e) => {
+      state.selectedSegment = e.target.value;
+      document.dispatchEvent(new CustomEvent("segment-change"));
+    });
+  }
+
   // llm2llm/dashboard/src/data.js
   function createEmptyStats() {
     return {
@@ -310,6 +350,7 @@
                     <option value="">All models</option>
                     ${DATA.models.map((m) => `<option value="${m}" ${state.filterModel === m ? "selected" : ""}>${shortModel(m)}</option>`).join("")}
                 </select>
+                ${getSegmentSelectorHTML()}
             </div>
             <div id="conversation-list"></div>
         `;
@@ -321,6 +362,7 @@
         state.filterModel = e.target.value;
         renderConversationList();
       });
+      attachSegmentListener();
     }
     renderConversationList();
   }
@@ -387,6 +429,7 @@
                     <option value="spirituality">Spirituality</option>
                 </select>
                 <span id="model-count" style="color: var(--text-muted); font-size: 12px;"></span>
+                ${getSegmentSelectorHTML()}
             </div>
             <div id="model-list"></div>
         `;
@@ -394,6 +437,7 @@
         state.modelSortAttribute = e.target.value;
         renderModelList();
       });
+      attachSegmentListener();
     }
     renderModelList();
   }
@@ -604,6 +648,7 @@
                 </optgroup>
             </select>
             <span style="color: var(--text-muted); font-size: 12px;">${sorted.length} pairs</span>
+            ${getSegmentSelectorHTML()}
         </div>
         <div class="ranking-list">
     `;
@@ -654,6 +699,7 @@
       state.rankingAttribute = e.target.value;
       renderPairs(container);
     });
+    attachSegmentListener();
   }
 
   // llm2llm/dashboard/src/views/maps.js
@@ -761,6 +807,7 @@
                         <option value="">All models</option>
                     </select>
                 </div>
+                ${getSegmentSelectorHTML()}
             </div>
             <div id="map-container">
                 <svg id="scatter-plot"></svg>
@@ -795,6 +842,7 @@
         state.mapHighlightModel = e.target.value;
         renderScatterPlot();
       });
+      attachSegmentListener();
     }
     renderScatterPlot();
   }
@@ -1122,38 +1170,12 @@
   window.scrollToInsightSection = scrollToInsightSection;
   window.togglePreview = togglePreview;
   function init() {
+    buildSegmentOptions();
     setupNavigation();
     setupPanel();
-    setupSegmentSelector();
     setupThemeToggle();
+    document.addEventListener("segment-change", () => render());
     render();
-  }
-  function setupSegmentSelector() {
-    const select = document.getElementById("segment-select");
-    const segments = /* @__PURE__ */ new Map();
-    segments.set("all", "All segments");
-    for (const a of DATA.analyses) {
-      const key = `${a.segment_start}:${a.segment_end === null ? "" : a.segment_end}`;
-      if (!segments.has(key)) {
-        const label = a.segment_end === null ? `[${a.segment_start}:] (last ${Math.abs(a.segment_start)})` : `[${a.segment_start}:${a.segment_end}]`;
-        segments.set(key, label);
-      }
-    }
-    for (const [value, label] of segments) {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = label;
-      select.appendChild(option);
-    }
-    if (segments.size > 1) {
-      const firstSegment = Array.from(segments.keys())[1];
-      select.value = firstSegment;
-      state.selectedSegment = firstSegment;
-    }
-    select.addEventListener("change", (e) => {
-      state.selectedSegment = e.target.value;
-      render();
-    });
   }
   function setupNavigation() {
     document.querySelectorAll(".nav-btn").forEach((btn) => {

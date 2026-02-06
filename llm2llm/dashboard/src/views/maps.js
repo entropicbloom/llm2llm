@@ -3,6 +3,7 @@
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
 import { shortModel, avg, metricColor, metricTextColor } from '../utils.js';
+import { getSegmentSelectorHTML, attachSegmentListener } from '../segment.js';
 
 // Color palettes by provider
 const PROVIDER_COLORS = {
@@ -113,6 +114,7 @@ export function renderMaps(container) {
                         <option value="">All models</option>
                     </select>
                 </div>
+                ${getSegmentSelectorHTML()}
             </div>
             <div id="map-container">
                 <svg id="scatter-plot"></svg>
@@ -153,6 +155,7 @@ export function renderMaps(container) {
             state.mapHighlightModel = e.target.value;
             renderScatterPlot();
         });
+        attachSegmentListener();
     }
 
     renderScatterPlot();

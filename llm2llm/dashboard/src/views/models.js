@@ -3,6 +3,7 @@
 import { state } from '../state.js';
 import { getFilteredAnalyses, createEmptyStats, addAnalysisToStats, computeAverages } from '../data.js';
 import { shortModel, avg, metricColor, metricTextColor } from '../utils.js';
+import { getSegmentSelectorHTML, attachSegmentListener } from '../segment.js';
 
 export function renderModels(container) {
     // Only create controls once
@@ -18,6 +19,7 @@ export function renderModels(container) {
                     <option value="spirituality">Spirituality</option>
                 </select>
                 <span id="model-count" style="color: var(--text-muted); font-size: 12px;"></span>
+                ${getSegmentSelectorHTML()}
             </div>
             <div id="model-list"></div>
         `;
@@ -26,6 +28,7 @@ export function renderModels(container) {
             state.modelSortAttribute = e.target.value;
             renderModelList();
         });
+        attachSegmentListener();
     }
 
     renderModelList();
