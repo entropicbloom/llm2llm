@@ -21,6 +21,7 @@ CSS_PARTIALS = [
     "_models.css",
     "_insights.css",
     "_maps.css",
+    "_trajectories.css",
     "_panel.css",
 ]
 
@@ -145,6 +146,12 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     # Load logo
     logo_data_uri = load_logo_base64(config)
 
+    # Load trajectory data if available
+    trajectory_data = "{}"
+    trajectory_path = config.data_dir / "trajectories.json"
+    if trajectory_path.exists():
+        trajectory_data = trajectory_path.read_text()
+
     # Load assets
     css = load_css()
     js = load_asset("scripts.js")
@@ -179,6 +186,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             <button class="nav-btn" data-view="models">Models</button>
             <button class="nav-btn" data-view="pairs">Pairs</button>
             <button class="nav-btn" data-view="maps">Maps</button>
+            <button class="nav-btn" data-view="trajectories">Trajectories</button>
             <button class="nav-btn" data-view="insights">Insights</button>
         </nav>
         <div id="app-body">
@@ -194,6 +202,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     <script>
 const DATA = {json.dumps(data, default=str).replace('</script>', '<\\/script>')};
 const INSIGHTS_DATA = {insights};
+const TRAJECTORY_DATA = {trajectory_data};
 {js}
     </script>
 </body>

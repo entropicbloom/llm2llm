@@ -2,27 +2,8 @@
 
 import { state } from '../state.js';
 import { getFilteredAnalyses } from '../data.js';
-import { shortModel, avg, metricColor, metricTextColor } from '../utils.js';
+import { shortModel, avg, metricColor, metricTextColor, PROVIDER_COLORS, getProvider, buildModelColorMap } from '../utils.js';
 import { getSegmentSelectorHTML, attachSegmentListener } from '../segment.js';
-
-// Color palettes by provider
-const PROVIDER_COLORS = {
-    anthropic: ['#8B6914', '#A67C00', '#C9A227', '#D4AF37', '#E6C55B', '#F0D77B'], // bronze/gold
-    mistral: ['#CC5500', '#E86A17', '#FF7F2A', '#FF944D', '#FFAA70', '#FFBF94'],   // orange
-    openai: ['#10A37F', '#1DBF8E', '#3DD9A5', '#5EEDB8', '#7FFFD4', '#A0FFE0'],    // teal/green
-    google: ['#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'],    // blue (gemini)
-    qwen: ['#5B21B6', '#7C3AED', '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE'],      // purple
-    default: ['#6B7280', '#9CA3AF', '#D1D5DB', '#E5E7EB', '#F3F4F6', '#F9FAFB'],   // gray
-};
-
-function getProvider(model) {
-    if (model.startsWith('claude-')) return 'anthropic';
-    if (model.startsWith('mistralai/')) return 'mistral';
-    if (model.startsWith('gpt-') || model.startsWith('openai/')) return 'openai';
-    if (model.startsWith('google/')) return 'google';
-    if (model.startsWith('qwen/')) return 'qwen';
-    return 'default';
-}
 
 function showPairInPanel(pair, modelColorMap) {
     const panel = document.getElementById('detail-panel');
@@ -190,17 +171,7 @@ function renderScatterPlot() {
         allModels.add(a.llm2_model);
     }
     const modelList = [...allModels].sort();
-
-    // Group models by provider and assign colors within each group
-    const modelColorMap = {};
-    const providerCounts = {};
-    modelList.forEach(model => {
-        const provider = getProvider(model);
-        const colors = PROVIDER_COLORS[provider] || PROVIDER_COLORS.default;
-        const idx = providerCounts[provider] || 0;
-        modelColorMap[model] = colors[idx % colors.length];
-        providerCounts[provider] = idx + 1;
-    });
+    const modelColorMap = buildModelColorMap(allModels);
 
     // Aggregate by model pair first
     const pairMap = {};

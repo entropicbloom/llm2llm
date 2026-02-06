@@ -8,6 +8,7 @@ import { renderModels } from './views/models.js';
 import { renderPairs } from './views/pairs.js';
 import { renderMaps } from './views/maps.js';
 import { renderInsights } from './views/insights.js';
+import { renderTrajectories } from './views/trajectories.js';
 
 // Expose functions to global scope for onclick handlers
 window.openConversation = openConversation;
@@ -91,6 +92,9 @@ function render() {
     } else if (state.currentView === 'maps') {
         if (!document.getElementById('map-container')) main.innerHTML = '';
         renderMaps(main);
+    } else if (state.currentView === 'trajectories') {
+        if (!document.getElementById('traj-container')) main.innerHTML = '';
+        renderTrajectories(main);
     } else if (state.currentView === 'insights') {
         main.innerHTML = '';
         renderInsights(main);

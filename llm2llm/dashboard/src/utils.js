@@ -1,5 +1,40 @@
 // Utility functions
 
+// Color palettes by provider
+export const PROVIDER_COLORS = {
+    anthropic: ['#8B6914', '#A67C00', '#C9A227', '#D4AF37', '#E6C55B', '#F0D77B'], // bronze/gold
+    mistral: ['#CC5500', '#E86A17', '#FF7F2A', '#FF944D', '#FFAA70', '#FFBF94'],   // orange
+    openai: ['#10A37F', '#1DBF8E', '#3DD9A5', '#5EEDB8', '#7FFFD4', '#A0FFE0'],    // teal/green
+    google: ['#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'],    // blue (gemini)
+    qwen: ['#7C3AED', '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE', '#EDE9FE'],     // purple
+    moonshot: ['#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FECACA', '#FEE2E2'],  // red
+    default: ['#6B7280', '#9CA3AF', '#D1D5DB', '#E5E7EB', '#F3F4F6', '#F9FAFB'],   // gray
+};
+
+export function getProvider(model) {
+    if (model.startsWith('claude-')) return 'anthropic';
+    if (model.startsWith('mistralai/')) return 'mistral';
+    if (model.startsWith('openai/gpt') || model.startsWith('gpt-')) return 'openai';
+    if (model.startsWith('google/')) return 'google';
+    if (model.startsWith('qwen/')) return 'qwen';
+    if (model.startsWith('moonshotai/')) return 'moonshot';
+    return 'default';
+}
+
+export function buildModelColorMap(models) {
+    const modelList = [...models].sort();
+    const map = {};
+    const providerCounts = {};
+    modelList.forEach(model => {
+        const provider = getProvider(model);
+        const colors = PROVIDER_COLORS[provider] || PROVIDER_COLORS.default;
+        const idx = providerCounts[provider] || 0;
+        map[model] = colors[idx % colors.length];
+        providerCounts[provider] = idx + 1;
+    });
+    return map;
+}
+
 export function shortModel(model) {
     return model
         .replace('claude-', '')
