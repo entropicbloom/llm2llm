@@ -1,4 +1,7 @@
-"""Generate a combined bar chart comparing keyword frequency across model pairs."""
+"""Generate a combined bar chart comparing keyword frequency across model pairs.
+
+Outputs a self-contained HTML file matching the llm2llm dashboard aesthetic.
+"""
 
 import json
 import re
@@ -7,15 +10,9 @@ import sys
 from pathlib import Path
 from collections import defaultdict
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import numpy as np
-
-
 PROJECT_ROOT = Path(__file__).parent.parent
 
-PALETTE = ['#7C3AED', '#E86A17', '#10A37F', '#2563EB', '#DC2626', '#D4AF37']
+COLORS = ['#6644aa', '#996600', '#007755', '#0088aa', '#cc2222', '#cc5577']
 
 
 def short(m):
@@ -48,7 +45,7 @@ def count_keyword(convs, keyword):
 
 
 def make_chart(keywords, output_path=None):
-    """Generate a combined horizontal bar chart for multiple keywords."""
+    """Generate a self-contained HTML bar chart for multiple keywords."""
     db = sqlite3.connect(PROJECT_ROOT / "data" / "llm2llm.db")
     db.row_factory = sqlite3.Row
     convs = db.execute("SELECT id, llm1_model, llm2_model, turn_count FROM conversations").fetchall()
@@ -57,69 +54,194 @@ def make_chart(keywords, output_path=None):
     for kw in keywords:
         results[kw] = count_keyword(convs, kw)
 
-    # Get all pairs with hits, sorted by first keyword's rate
+    # Get all pairs with hits, sorted by max score, cap at top 10
     all_pairs = sorted(
         set().union(*[r.keys() for r in results.values()]),
-        key=lambda p: results[keywords[0]].get(p, 0),
+        key=lambda p: max(results[kw].get(p, 0) for kw in keywords),
         reverse=True,
     )
-    # Keep only pairs that have hits for at least one keyword, cap at top 10
     all_pairs = [p for p in all_pairs if any(results[kw].get(p, 0) > 0 for kw in keywords)]
-    # Rank by max score across any keyword to keep the most interesting pairs
-    all_pairs.sort(key=lambda p: max(results[kw].get(p, 0) for kw in keywords), reverse=True)
     all_pairs = all_pairs[:10]
 
-    n = len(keywords)
-    fig_w = 7 * n
-    fig_h = max(5, len(all_pairs) * 0.38)
-    fig, axes = plt.subplots(1, n, figsize=(fig_w, fig_h), sharey=True)
-    if n == 1:
-        axes = [axes]
+    # Find max value for scaling
+    global_max = max(
+        (results[kw].get(p, 0) for kw in keywords for p in all_pairs),
+        default=1,
+    )
 
-    fig.patch.set_facecolor('#0f0f0f')
-    fig.suptitle('Keyword frequency by model pair',
-                 fontsize=15, fontweight='600', color='#e0e0e0',
-                 fontfamily='monospace', y=0.99)
+    # Per-keyword max for column width proportioning
+    kw_maxes = {kw: max((results[kw].get(p, 0) for p in all_pairs), default=0) for kw in keywords}
 
-    y = np.arange(len(all_pairs))
-    h = 0.55
-
+    # Build chart columns HTML
+    columns_html = ''
     for i, kw in enumerate(keywords):
-        ax = axes[i]
-        ax.set_facecolor('#0f0f0f')
-        vals = [results[kw].get(p, 0) for p in all_pairs]
-        color = PALETTE[i % len(PALETTE)]
-        max_val = max(vals) if vals else 1
+        color = COLORS[i % len(COLORS)]
+        col_max = kw_maxes[kw] or 1
+        flex = col_max / global_max if global_max else 1
+        rows_html = ''
+        for p in all_pairs:
+            v = results[kw].get(p, 0)
+            pct = (v / col_max * 75) if col_max else 0
+            label = f'{v:.2f}' if v > 0 else ''
+            opacity = 0.3 + 0.7 * (v / global_max) if global_max and v > 0 else 0.08
+            rows_html += f'''
+                <div class="row">
+                    <div class="bar-track">
+                        <div class="bar" style="width: {pct}%; background: {color}; opacity: {opacity};"></div>
+                        <span class="bar-label" style="color: {color};">{label}</span>
+                    </div>
+                </div>'''
 
-        # Gradient-like effect: vary alpha by value
-        bar_colors = [(*matplotlib.colors.to_rgb(color), 0.3 + 0.65 * (v / max_val) if max_val else 0.3) for v in vals]
-        bars = ax.barh(y, vals, h, color=bar_colors, edgecolor=color, linewidth=0.5)
+        columns_html += f'''
+            <div class="chart-col" style="flex: {flex:.2f};">
+                <div class="col-title" style="color: {color};">{kw}</div>
+                <div class="rows">{rows_html}
+                </div>
+                <div class="axis-label">hits / message</div>
+            </div>'''
 
-        ax.set_title(kw, fontsize=13, color=color, fontweight='600',
-                     fontfamily='monospace', pad=12)
-        ax.set_xlabel('hits / message', fontsize=9, color='#888', fontfamily='monospace')
-        ax.tick_params(colors='#888', labelsize=8)
-        ax.invert_yaxis()
+    # Build pair labels — bold pairs that have hits across all keywords
+    labels_html = ''
+    for p in all_pairs:
+        has_all = all(results[kw].get(p, 0) > 0 for kw in keywords)
+        style = ' style="font-weight: 600; color: #1a1a1a;"' if has_all else ''
+        labels_html += f'<div class="pair-label"{style}>{p}</div>'
 
-        # Minimal grid
-        ax.xaxis.grid(True, color='#222', linewidth=0.5)
-        ax.set_axisbelow(True)
-        for spine in ax.spines.values():
-            spine.set_visible(False)
+    html = f'''<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Keyword frequency — llm2llm</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap');
 
-        if i == 0:
-            ax.set_yticks(y)
-            ax.set_yticklabels(all_pairs, fontsize=7.5, fontfamily='monospace', color='#ccc')
+* {{ box-sizing: border-box; margin: 0; padding: 0; }}
 
-        for bar, v in zip(bars, vals):
-            if v > 0:
-                ax.text(v + max_val * 0.02, bar.get_y() + bar.get_height() / 2,
-                        f'{v:.2f}', va='center', fontsize=7,
-                        color='#999', fontfamily='monospace')
+body {{
+    font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+    background: #fafafa;
+    color: #1a1a1a;
+    padding: 48px;
+    display: flex;
+    justify-content: center;
+}}
 
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    out = output_path or '/tmp/keyword_chart.png'
-    plt.savefig(out, dpi=180, bbox_inches='tight', facecolor='#0f0f0f')
+.container {{
+    max-width: 1200px;
+    width: 100%;
+}}
+
+h1 {{
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 32px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #d0d0d0;
+}}
+
+.chart {{
+    display: flex;
+    gap: 0;
+}}
+
+.labels {{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 36px;
+    flex-shrink: 0;
+}}
+
+.pair-label {{
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 20px;
+    font-size: 11px;
+    color: #555;
+    white-space: nowrap;
+}}
+
+.chart-col {{
+    flex: 1;
+    min-width: 0;
+    padding: 0 12px;
+    padding-right: 48px;
+    border-left: 1px solid #e0e0e0;
+    overflow: hidden;
+}}
+
+.col-title {{
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-bottom: 12px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+}}
+
+.rows {{
+    display: flex;
+    flex-direction: column;
+}}
+
+.row {{
+    height: 36px;
+    display: flex;
+    align-items: center;
+}}
+
+.bar-track {{
+    width: 100%;
+    height: 20px;
+    display: flex;
+    align-items: center;
+}}
+
+.bar {{
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    min-width: 0;
+}}
+
+.bar-label {{
+    font-size: 10px;
+    font-weight: 400;
+    padding-left: 8px;
+    flex-shrink: 0;
+}}
+
+.axis-label {{
+    font-size: 9px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 12px;
+    text-align: center;
+}}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Keyword frequency by model pair</h1>
+    <div class="chart">
+        <div class="labels">
+            {labels_html}
+        </div>
+        {columns_html}
+    </div>
+</div>
+</body>
+</html>'''
+
+    out = output_path or '/tmp/keyword_chart.html'
+    Path(out).write_text(html)
     print(f"Saved to {out}")
     db.close()
 
