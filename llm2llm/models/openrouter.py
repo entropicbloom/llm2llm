@@ -17,6 +17,7 @@ class OpenRouterProvider(BaseLLMProvider):
         "mistralai/ministral-3b-2410",
         "mistralai/ministral-14b-2512",
         "mistralai/mistral-large-2512",
+        "mistralai/mistral-small-2603",
         # OpenAI
         "openai/gpt-5.1",
         "openai/gpt-5-mini",
@@ -24,6 +25,8 @@ class OpenRouterProvider(BaseLLMProvider):
         "qwen/qwen3-235b-a22b",
         "qwen/qwen3-30b-a3b",
         "qwen/qwen3-max",
+        "qwen/qwen3.5-397b-a17b",
+        "qwen/qwen3.5-122b-a10b",
         # Moonshot
         "moonshotai/kimi-k2.5",
     ]

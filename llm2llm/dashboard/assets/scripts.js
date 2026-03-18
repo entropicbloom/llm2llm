@@ -703,6 +703,44 @@
   }
 
   // llm2llm/dashboard/src/views/maps.js
+  var MODEL_PARAMS = {
+    // Mistral
+    "mistralai/ministral-3b": 3,
+    "mistralai/ministral-3b-2410": 3,
+    "mistralai/ministral-8b": 8,
+    "mistralai/ministral-8b-2410": 8,
+    "mistralai/ministral-14b-2512": 14,
+    "mistralai/mistral-large-2512": 123,
+    "mistralai/mistral-small-2603": 119,
+    // Qwen
+    "qwen/qwen3-max": 1e3,
+    "qwen/qwen3-235b-a22b": 235,
+    "qwen/qwen3-30b-a3b": 30,
+    "qwen/qwen3.5-397b-a17b": 397,
+    "qwen/qwen3.5-122b-a10b": 122,
+    // Moonshot
+    "moonshotai/kimi-k2.5": 1e3
+  };
+  function isSizeAxis(axis) {
+    return axis === "size_max" || axis === "size_min";
+  }
+  function getPairSize(pair, which) {
+    const p1 = MODEL_PARAMS[pair.llm1_model] ?? null;
+    const p2 = MODEL_PARAMS[pair.llm2_model] ?? null;
+    if (p1 === null || p2 === null) return null;
+    return which === "size_max" ? Math.max(p1, p2) : Math.min(p1, p2);
+  }
+  function axisLabel(axis) {
+    const labels = {
+      depth: "Depth",
+      warmth: "Warmth",
+      energy: "Energy",
+      spirituality: "Spirituality",
+      size_max: "Size \u2014 max (B)",
+      size_min: "Size \u2014 min (B)"
+    };
+    return labels[axis] || axis;
+  }
   var PROVIDER_COLORS = {
     anthropic: ["#8B6914", "#A67C00", "#C9A227", "#D4AF37", "#E6C55B", "#F0D77B"],
     // bronze/gold
@@ -792,6 +830,8 @@
                         <option value="warmth">Warmth</option>
                         <option value="energy">Energy</option>
                         <option value="spirituality">Spirituality</option>
+                        <option value="size_max">Size \u2014 max (B)</option>
+                        <option value="size_min">Size \u2014 min (B)</option>
                     </select>
                     <label>Y axis:</label>
                     <select id="y-axis-select">
@@ -799,6 +839,8 @@
                         <option value="depth">Depth</option>
                         <option value="energy">Energy</option>
                         <option value="spirituality">Spirituality</option>
+                        <option value="size_max">Size \u2014 max (B)</option>
+                        <option value="size_min">Size \u2014 min (B)</option>
                     </select>
                 </div>
                 <div class="model-selector">
@@ -894,11 +936,20 @@
       pairMap[pairKey].xValues.push(a[xAxis] ?? 0);
       pairMap[pairKey].yValues.push(a[yAxis] ?? 0);
     }
-    const pairAverages = Object.values(pairMap).map((pair) => ({
-      pair,
-      avgX: pair.xValues.reduce((a, b) => a + b, 0) / pair.xValues.length,
-      avgY: pair.yValues.reduce((a, b) => a + b, 0) / pair.yValues.length
-    }));
+    const pairAverages = Object.values(pairMap).map((pair) => {
+      let avgX, avgY;
+      if (isSizeAxis(xAxis)) {
+        avgX = getPairSize(pair, xAxis);
+      } else {
+        avgX = pair.xValues.reduce((a, b) => a + b, 0) / pair.xValues.length;
+      }
+      if (isSizeAxis(yAxis)) {
+        avgY = getPairSize(pair, yAxis);
+      } else {
+        avgY = pair.yValues.reduce((a, b) => a + b, 0) / pair.yValues.length;
+      }
+      return { pair, avgX, avgY };
+    }).filter((p) => p.avgX !== null && p.avgY !== null);
     const xValues = pairAverages.map((p) => p.avgX);
     const yValues = pairAverages.map((p) => p.avgY);
     const dataXMin = Math.min(...xValues);
@@ -916,8 +967,8 @@
     let svgContent = "";
     svgContent += `<line x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${margin.left + plotWidth}" y2="${margin.top + plotHeight}" stroke="var(--border)" />`;
     svgContent += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + plotHeight}" stroke="var(--border)" />`;
-    svgContent += `<text x="${margin.left + plotWidth / 2}" y="${height - 10}" text-anchor="middle" fill="var(--text-muted)" font-size="12">${xAxis.charAt(0).toUpperCase() + xAxis.slice(1)}</text>`;
-    svgContent += `<text x="15" y="${margin.top + plotHeight / 2}" text-anchor="middle" fill="var(--text-muted)" font-size="12" transform="rotate(-90, 15, ${margin.top + plotHeight / 2})">${yAxis.charAt(0).toUpperCase() + yAxis.slice(1)}</text>`;
+    svgContent += `<text x="${margin.left + plotWidth / 2}" y="${height - 10}" text-anchor="middle" fill="var(--text-muted)" font-size="12">${axisLabel(xAxis)}</text>`;
+    svgContent += `<text x="15" y="${margin.top + plotHeight / 2}" text-anchor="middle" fill="var(--text-muted)" font-size="12" transform="rotate(-90, 15, ${margin.top + plotHeight / 2})">${axisLabel(yAxis)}</text>`;
     const nTicks = 5;
     const xStep = (xMax - xMin) / nTicks;
     const yStep = (yMax - yMin) / nTicks;
