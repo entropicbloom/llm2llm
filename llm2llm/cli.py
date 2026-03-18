@@ -518,6 +518,103 @@ def titles(model: str):
 
 
 @cli.command()
+@click.argument("keyword")
+@click.option("--llm1", default=None, help="Filter by initiator model")
+@click.option("--llm2", default=None, help="Filter by responder model")
+@click.option("--model", default=None, help="Filter by model in either position")
+@click.option("-i", "--ignore-case", is_flag=True, help="Case-insensitive search")
+def search(keyword: str, llm1: str | None, llm2: str | None, model: str | None, ignore_case: bool):
+    """Count keyword occurrences across conversations.
+
+    Shows counts per conversation and aggregated by model pair.
+    """
+    config, storage = get_config_and_storage()
+
+    conversations = storage.list_conversations(llm1_model=llm1, llm2_model=llm2, limit=10000)
+
+    # If --model is given, filter to conversations where it appears in either position
+    if model:
+        conversations = [c for c in conversations if c["llm1_model"] == model or c["llm2_model"] == model]
+
+    if not conversations:
+        console.print("[dim]No conversations found matching filters.[/dim]")
+        return
+
+    import re
+    pattern = re.compile(re.escape(keyword), re.IGNORECASE if ignore_case else 0)
+
+    from collections import defaultdict
+
+    pair_counts: dict[tuple[str, str], dict] = defaultdict(lambda: {"count": 0, "conversations": 0, "total_messages": 0})
+    conv_results = []
+
+    for conv_meta in conversations:
+        conv = storage.load(conv_meta["id"])
+        if not conv:
+            continue
+
+        total = 0
+        for msg in conv.messages:
+            total += len(pattern.findall(msg.content))
+
+        if total > 0:
+            conv_results.append({
+                "id": conv.id,
+                "llm1": conv.llm1_model,
+                "llm2": conv.llm2_model,
+                "count": total,
+                "turns": conv.turn_count,
+            })
+
+        pair_key = (conv.llm1_model, conv.llm2_model)
+        pair_counts[pair_key]["count"] += total
+        pair_counts[pair_key]["conversations"] += 1 if total > 0 else 0
+        pair_counts[pair_key]["total_messages"] += conv.turn_count
+
+    # Show per-pair summary
+    if not conv_results:
+        console.print(f"[dim]No occurrences of '{keyword}' found.[/dim]")
+        return
+
+    grand_total = sum(r["count"] for r in conv_results)
+
+    table = Table(title=f"'{keyword}' — by model pair")
+    table.add_column("LLM1 (Initiator)", style="green")
+    table.add_column("LLM2 (Responder)", style="blue")
+    table.add_column("Hits", justify="right", style="bold")
+    table.add_column("In convs", justify="right")
+    table.add_column("Hits/msg", justify="right", style="dim")
+
+    for (l1, l2), stats in sorted(pair_counts.items(), key=lambda x: -x[1]["count"]):
+        if stats["count"] == 0:
+            continue
+        hits_per_msg = stats["count"] / stats["total_messages"] if stats["total_messages"] else 0
+        table.add_row(
+            l1, l2,
+            str(stats["count"]),
+            str(stats["conversations"]),
+            f"{hits_per_msg:.2f}",
+        )
+
+    console.print(table)
+
+    # Show per-conversation detail
+    conv_results.sort(key=lambda r: -r["count"])
+    detail = Table(title=f"'{keyword}' — by conversation (top 20)")
+    detail.add_column("ID", style="cyan", no_wrap=True)
+    detail.add_column("LLM1", style="green")
+    detail.add_column("LLM2", style="blue")
+    detail.add_column("Hits", justify="right", style="bold")
+    detail.add_column("Turns", justify="right", style="dim")
+
+    for r in conv_results[:20]:
+        detail.add_row(r["id"][:8] + "...", r["llm1"], r["llm2"], str(r["count"]), str(r["turns"]))
+
+    console.print(detail)
+    console.print(f"\n[bold]Total: {grand_total} occurrences across {len(conv_results)} conversations[/bold]")
+
+
+@cli.command()
 @click.option("--output", "-o", default="dashboard.html", help="Output file path")
 @click.option("--open", "open_browser", is_flag=True, help="Open in browser after generating")
 def dashboard(output: str, open_browser: bool):
