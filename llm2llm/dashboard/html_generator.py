@@ -156,7 +156,17 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM2LLM Dashboard</title>
+    <title>LLM2LLM – AI-to-AI Conversation Analysis</title>
+    <meta name="description" content="Explore how LLMs converse with each other. Interactive dashboard analyzing multi-turn conversations between AI models like Claude, GPT, Gemini, and more.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://llm2llm.com/">
+    <meta property="og:title" content="LLM2LLM – AI-to-AI Conversation Analysis">
+    <meta property="og:description" content="Explore how LLMs converse with each other. Interactive dashboard analyzing multi-turn conversations between AI models.">
+    <meta property="og:url" content="https://llm2llm.com/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="LLM2LLM – AI-to-AI Conversation Analysis">
+    <meta name="twitter:description" content="Explore how LLMs converse with each other. Interactive dashboard analyzing multi-turn conversations between AI models.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
