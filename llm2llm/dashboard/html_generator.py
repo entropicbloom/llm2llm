@@ -202,7 +202,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             </aside>
         </div>
     </div>
-    <a href="https://llmify.ch" target="_blank" rel="noopener" style="position:fixed;bottom:12px;right:16px;font-size:11px;opacity:.45;color:inherit;text-decoration:none;font-family:'IBM Plex Mono',monospace;z-index:10;">Powered by LLMify</a>
+    <a href="https://llmify.ch" target="_blank" rel="noopener" style="position:fixed;bottom:12px;right:16px;font-size:11px;opacity:.45;color:inherit;text-decoration:none;font-family:'IBM Plex Mono',monospace;z-index:10;">Powered by <span style="font-weight:500;color:var(--accent);">LLMify</span></a>
     <script>
 const DATA = {json.dumps(data, default=str).replace('</script>', '<\\/script>')};
 const INSIGHTS_DATA = {insights};
