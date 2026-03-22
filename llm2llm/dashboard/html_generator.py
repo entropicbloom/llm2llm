@@ -159,6 +159,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
     <title>LLM2LLM – AI-to-AI Conversation Analysis</title>
     <meta name="description" content="Explore how LLMs converse with each other. Interactive dashboard analyzing multi-turn conversations between AI models like Claude, GPT, Gemini, and more.">
     <meta name="robots" content="index, follow">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="canonical" href="https://llm2llm.com/">
     <meta property="og:title" content="LLM2LLM – AI-to-AI Conversation Analysis">
     <meta property="og:description" content="Explore how LLMs converse with each other. Interactive dashboard analyzing multi-turn conversations between AI models.">
