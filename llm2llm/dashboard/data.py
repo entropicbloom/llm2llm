@@ -15,6 +15,14 @@ def infer_provider(model_id: str) -> str:
         return "OpenAI"
     elif model_id.startswith("google/"):
         return "Google"
+    elif model_id.startswith("qwen/"):
+        return "Qwen"
+    elif model_id.startswith("moonshotai/"):
+        return "Moonshot"
+    elif model_id.startswith("deepseek/"):
+        return "DeepSeek"
+    elif model_id.startswith("nvidia/"):
+        return "NVIDIA"
     else:
         return "Other"
 

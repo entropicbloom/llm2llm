@@ -6,14 +6,16 @@ export function renderInsights(container) {
     const insights = INSIGHTS_DATA;
 
     // Group dynamics by type
-    const dynamicTypes = ['Compassion', 'Co-Discovery', 'World-Building', 'Asymmetry', 'Mirroring', 'Tension'];
+    const dynamicTypes = ['Compassion', 'Co-Discovery', 'World-Building', 'Tension', 'Asymmetry', 'Mirroring', 'Escalation', 'Breakdown'];
     const typeLabels = {
         'Compassion': 'Compassion & Care',
         'Co-Discovery': 'Co-Discovery',
         'World-Building': 'World-Building',
         'Asymmetry': 'Asymmetric Dynamics',
         'Mirroring': 'Mirroring & Convergence',
-        'Tension': 'Tension & Resolution'
+        'Tension': 'Tension & Resolution',
+        'Escalation': 'Escalation Spirals',
+        'Breakdown': 'Breakdowns & Loops'
     };
 
     // Build sidebar items
@@ -46,7 +48,7 @@ export function renderInsights(container) {
             <div class="insights-content">
                 <div class="insights-intro">
                     <h2>Relational Dynamics</h2>
-                    <p class="insights-subtitle">How LLMs relate to each other: compassion, co-discovery, world-building, and more</p>
+                    <p class="insights-subtitle">How LLMs relate to each other: what they build together, where they get stuck, and how they fail to stop</p>
                     ${insights.note ? `<p class="insights-disclaimer">${insights.note}</p>` : ''}
                 </div>
     `;
@@ -65,7 +67,7 @@ export function renderInsights(container) {
                         <div class="excerpt-container">
                             ${d.excerpt.map(turn => `
                                 <div class="excerpt-turn">
-                                    <span class="excerpt-speaker">${turn.speaker}:</span>
+                                    ${turn.turn ? `<span class="excerpt-turn-no">T${turn.turn}</span>` : ''}<span class="excerpt-speaker">${turn.speaker}:</span>
                                     <span class="excerpt-text">${turn.text}</span>
                                 </div>
                             `).join('')}

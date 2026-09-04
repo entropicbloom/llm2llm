@@ -69,6 +69,15 @@
     border-left: 2px solid var(--green);
 }
 
+.insight-card.dynamic-escalation {
+    border-left: 2px solid var(--red);
+}
+
+.insight-card.dynamic-breakdown {
+    border-left: 2px solid var(--text-muted);
+    border-left-style: dashed;
+}
+
 .insight-card-description {
     color: var(--text-muted);
     font-size: 12px;
@@ -97,6 +106,13 @@
     font-weight: 500;
     color: var(--cyan);
     margin-right: 8px;
+}
+
+.excerpt-turn-no {
+    color: var(--text-muted);
+    font-size: 10px;
+    margin-right: 8px;
+    opacity: 0.7;
 }
 
 .excerpt-text {

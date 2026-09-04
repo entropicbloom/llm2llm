@@ -718,8 +718,16 @@
     "qwen/qwen3-30b-a3b": 30,
     "qwen/qwen3.5-397b-a17b": 397,
     "qwen/qwen3.5-122b-a10b": 122,
+    "qwen/qwen3.6-27b": 27,
+    "qwen/qwen3.8-27b": 27,
     // Moonshot
-    "moonshotai/kimi-k2.5": 1e3
+    "moonshotai/kimi-k2.5": 1e3,
+    // Google open weights
+    "google/gemma-4-31b-it": 31,
+    // DeepSeek
+    "deepseek/deepseek-v4-flash-0731": 284,
+    // NVIDIA
+    "nvidia/nemotron-3.5-lightning": 30
   };
   function isSizeAxis(axis) {
     return axis === "size_max" || axis === "size_min";
@@ -752,6 +760,12 @@
     // blue (gemini)
     qwen: ["#5B21B6", "#7C3AED", "#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE"],
     // purple
+    deepseek: ["#0E7490", "#0891B2", "#06B6D4", "#22D3EE", "#67E8F9", "#A5F3FC"],
+    // cyan
+    nvidia: ["#4D7C0F", "#65A30D", "#84CC16", "#A3E635", "#BEF264", "#D9F99D"],
+    // lime
+    moonshot: ["#9F1239", "#BE123C", "#E11D48", "#F43F5E", "#FB7185", "#FDA4AF"],
+    // rose
     default: ["#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
     // gray
   };
@@ -761,6 +775,9 @@
     if (model.startsWith("gpt-") || model.startsWith("openai/")) return "openai";
     if (model.startsWith("google/")) return "google";
     if (model.startsWith("qwen/")) return "qwen";
+    if (model.startsWith("deepseek/")) return "deepseek";
+    if (model.startsWith("nvidia/")) return "nvidia";
+    if (model.startsWith("moonshotai/")) return "moonshot";
     return "default";
   }
   function showPairInPanel(pair, modelColorMap) {
@@ -1105,14 +1122,16 @@
   // llm2llm/dashboard/src/views/insights.js
   function renderInsights(container) {
     const insights = INSIGHTS_DATA;
-    const dynamicTypes = ["Compassion", "Co-Discovery", "World-Building", "Asymmetry", "Mirroring", "Tension"];
+    const dynamicTypes = ["Compassion", "Co-Discovery", "World-Building", "Tension", "Asymmetry", "Mirroring", "Escalation", "Breakdown"];
     const typeLabels = {
       "Compassion": "Compassion & Care",
       "Co-Discovery": "Co-Discovery",
       "World-Building": "World-Building",
       "Asymmetry": "Asymmetric Dynamics",
       "Mirroring": "Mirroring & Convergence",
-      "Tension": "Tension & Resolution"
+      "Tension": "Tension & Resolution",
+      "Escalation": "Escalation Spirals",
+      "Breakdown": "Breakdowns & Loops"
     };
     const sidebarItems = [];
     dynamicTypes.forEach((type) => {
@@ -1142,7 +1161,7 @@
             <div class="insights-content">
                 <div class="insights-intro">
                     <h2>Relational Dynamics</h2>
-                    <p class="insights-subtitle">How LLMs relate to each other: compassion, co-discovery, world-building, and more</p>
+                    <p class="insights-subtitle">How LLMs relate to each other: what they build together, where they get stuck, and how they fail to stop</p>
                     ${insights.note ? `<p class="insights-disclaimer">${insights.note}</p>` : ""}
                 </div>
     `;
@@ -1159,7 +1178,7 @@
                         <div class="excerpt-container">
                             ${d.excerpt.map((turn) => `
                                 <div class="excerpt-turn">
-                                    <span class="excerpt-speaker">${turn.speaker}:</span>
+                                    ${turn.turn ? `<span class="excerpt-turn-no">T${turn.turn}</span>` : ""}<span class="excerpt-speaker">${turn.speaker}:</span>
                                     <span class="excerpt-text">${turn.text}</span>
                                 </div>
                             `).join("")}

@@ -27,9 +27,28 @@ class OpenRouterProvider(BaseLLMProvider):
         "qwen/qwen3-max",
         "qwen/qwen3.5-397b-a17b",
         "qwen/qwen3.5-122b-a10b",
+        "qwen/qwen3.6-27b",
+        "qwen/qwen3.8-27b",
+        "qwen/qwen3.8-flash",
         # Moonshot
         "moonshotai/kimi-k2.5",
+        "moonshotai/kimi-k2.6",
+        # Google open weights
+        "google/gemma-4-31b-it",
+        # DeepSeek
+        "deepseek/deepseek-v4-flash-0731",
+        # NVIDIA
+        "nvidia/nemotron-3.5-lightning",
     ]
+
+    # Hybrid reasoning models that return empty content unless reasoning is disabled.
+    reasoning_off_prefixes = (
+        "qwen/qwen3",
+        "google/gemma-4",
+        "deepseek/",
+        "nvidia/nemotron",
+        "moonshotai/kimi-k2.6",
+    )
 
     def __init__(self, api_key: str):
         super().__init__(api_key)
@@ -58,8 +77,8 @@ class OpenRouterProvider(BaseLLMProvider):
             ],
         }
 
-        # Disable thinking/reasoning mode for Qwen3 models (returns empty content otherwise)
-        if model_id.startswith("qwen/qwen3"):
+        # Disable thinking/reasoning mode for hybrid models (returns empty content otherwise)
+        if model_id.startswith(self.reasoning_off_prefixes):
             kwargs["extra_body"] = {"reasoning": {"effort": "none"}}
 
         response = self.client.chat.completions.create(**kwargs)

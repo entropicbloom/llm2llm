@@ -21,8 +21,16 @@ const MODEL_PARAMS = {
     'qwen/qwen3-30b-a3b': 30,
     'qwen/qwen3.5-397b-a17b': 397,
     'qwen/qwen3.5-122b-a10b': 122,
+    'qwen/qwen3.6-27b': 27,
+    'qwen/qwen3.8-27b': 27,
     // Moonshot
     'moonshotai/kimi-k2.5': 1000,
+    // Google open weights
+    'google/gemma-4-31b-it': 31,
+    // DeepSeek
+    'deepseek/deepseek-v4-flash-0731': 284,
+    // NVIDIA
+    'nvidia/nemotron-3.5-lightning': 30,
 };
 
 function isSizeAxis(axis) {
@@ -51,6 +59,9 @@ const PROVIDER_COLORS = {
     openai: ['#10A37F', '#1DBF8E', '#3DD9A5', '#5EEDB8', '#7FFFD4', '#A0FFE0'],    // teal/green
     google: ['#1E40AF', '#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE'],    // blue (gemini)
     qwen: ['#5B21B6', '#7C3AED', '#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE'],      // purple
+    deepseek: ['#0E7490', '#0891B2', '#06B6D4', '#22D3EE', '#67E8F9', '#A5F3FC'],  // cyan
+    nvidia: ['#4D7C0F', '#65A30D', '#84CC16', '#A3E635', '#BEF264', '#D9F99D'],    // lime
+    moonshot: ['#9F1239', '#BE123C', '#E11D48', '#F43F5E', '#FB7185', '#FDA4AF'],  // rose
     default: ['#6B7280', '#9CA3AF', '#D1D5DB', '#E5E7EB', '#F3F4F6', '#F9FAFB'],   // gray
 };
 
@@ -60,6 +71,9 @@ function getProvider(model) {
     if (model.startsWith('gpt-') || model.startsWith('openai/')) return 'openai';
     if (model.startsWith('google/')) return 'google';
     if (model.startsWith('qwen/')) return 'qwen';
+    if (model.startsWith('deepseek/')) return 'deepseek';
+    if (model.startsWith('nvidia/')) return 'nvidia';
+    if (model.startsWith('moonshotai/')) return 'moonshot';
     return 'default';
 }
 
