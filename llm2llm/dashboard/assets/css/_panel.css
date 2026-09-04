@@ -1,37 +1,85 @@
 /* Split-pane Layout - Terminal Minimalist */
-#app-body {
-    display: grid;
-    grid-template-columns: 1fr;
-    transition: grid-template-columns 0.2s ease;
+:root {
+    --panel-width: clamp(420px, 45vw, 900px);
 }
 
-#app-body.panel-open {
-    grid-template-columns: 1fr minmax(400px, 50%);
+#app-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
 }
 
 #main-content {
     min-width: 0;
 }
 
+/* Desktop: panel is a real column with a draggable divider, and the app
+   stops centering at 1400px so the list keeps its width on wide screens. */
+@media (min-width: 1025px) {
+    #app.panel-open {
+        max-width: none;
+    }
+
+    #app.panel-open header,
+    #app.panel-open nav,
+    #app.panel-open #main-content {
+        max-width: 1400px;
+    }
+
+    #app-body.panel-open {
+        grid-template-columns: minmax(0, 1fr) 9px var(--panel-width);
+    }
+
+    #panel-resizer {
+        display: none;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        cursor: col-resize;
+        background: transparent;
+        border-left: 1px solid var(--border);
+        touch-action: none;
+        z-index: 101;
+    }
+
+    #app-body.panel-open #panel-resizer {
+        display: block;
+    }
+
+    #panel-resizer:hover,
+    body.resizing #panel-resizer {
+        border-left-color: var(--accent);
+        background: var(--accent-muted);
+    }
+
+    .detail-panel {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        min-width: 0;
+        overflow-y: auto;
+        background: var(--bg);
+    }
+}
+
+body.resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+body.resizing .detail-panel,
+body.resizing #main-content {
+    pointer-events: none;
+}
+
 /* Detail Panel */
 .detail-panel {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 50%;
-    min-width: 400px;
-    max-width: 800px;
-    height: 100vh;
+    display: none;
     background: var(--bg);
-    border-left: 1px solid var(--border);
-    overflow-y: auto;
-    transform: translateX(100%);
-    transition: transform 0.2s ease;
-    z-index: 100;
 }
 
 .detail-panel.visible {
-    transform: translateX(0);
+    display: block;
 }
 
 .panel-close {
@@ -65,43 +113,33 @@
     padding-right: 40px;
 }
 
-/* Tablet: full-screen sidebar */
+/* Tablet and mobile: full-screen overlay */
 @media (max-width: 1024px) {
-    /* Lock body scroll when panel covers content */
     body:has(.detail-panel.visible) {
         overflow: hidden;
     }
 
+    #panel-resizer {
+        display: none;
+    }
+
     #app-body.panel-open {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .detail-panel {
-        width: 100%;
-        min-width: unset;
-        max-width: unset;
-        border-left: none;
-    }
-
-    .detail-panel.visible {
-        transform: translateX(0);
-    }
-}
-
-/* Mobile: full-screen overlay */
-@media (max-width: 768px) {
-    .detail-panel {
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
         width: 100%;
         height: 100vh;
-        min-width: unset;
-        max-width: unset;
-        border: none;
-        transform: translateX(100%);
+        overflow-y: auto;
+        z-index: 100;
     }
+}
 
+@media (max-width: 768px) {
     #panel-body {
         padding: 16px;
     }

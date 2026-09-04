@@ -43,6 +43,7 @@ export async function openConversation(convId, scrollToTurn = null) {
     // Show panel with loading state
     panel.classList.add('visible');
     appBody.classList.add('panel-open');
+    document.getElementById('app').classList.add('panel-open');
     body.innerHTML = '<div style="padding: 40px; text-align: center;">Loading transcript...</div>';
 
     // Fetch transcript from conversations folder
@@ -135,6 +136,7 @@ export function closePanel() {
 
     panel.classList.remove('visible');
     appBody.classList.remove('panel-open');
+    document.getElementById('app').classList.remove('panel-open');
 
     // Clear selection
     state.selectedConversationId = null;

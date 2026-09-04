@@ -20,6 +20,7 @@ function init() {
     buildSegmentOptions(); // set default segment
     setupNavigation();
     setupPanel();
+    setupPanelResizer();
     setupThemeToggle();
     document.addEventListener('segment-change', () => render());
     render();
@@ -33,6 +34,60 @@ function setupNavigation() {
             state.currentView = btn.dataset.view;
             render();
         });
+    });
+}
+
+/** Draggable divider between the list and the detail panel (desktop only). */
+function setupPanelResizer() {
+    const resizer = document.getElementById('panel-resizer');
+    const appBody = document.getElementById('app-body');
+    if (!resizer || !appBody) return;
+
+    const MIN_PANEL = 360;
+    const MIN_MAIN = 420;
+    const root = document.documentElement;
+    const KEY = 'llm2llm.panelWidth';
+
+    const applyWidth = (px) => root.style.setProperty('--panel-width', `${Math.round(px)}px`);
+
+    try {
+        const saved = parseInt(localStorage.getItem(KEY), 10);
+        if (saved > 0) applyWidth(saved);
+    } catch (e) { /* storage unavailable */ }
+
+    let dragging = false;
+
+    const onMove = (e) => {
+        if (!dragging) return;
+        const rect = appBody.getBoundingClientRect();
+        const maxPanel = Math.max(MIN_PANEL, rect.width - MIN_MAIN - resizer.offsetWidth);
+        const width = Math.min(maxPanel, Math.max(MIN_PANEL, rect.right - e.clientX));
+        applyWidth(width);
+    };
+
+    const onUp = () => {
+        if (!dragging) return;
+        dragging = false;
+        document.body.classList.remove('resizing');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        try {
+            const current = parseInt(root.style.getPropertyValue('--panel-width'), 10);
+            if (current > 0) localStorage.setItem(KEY, String(current));
+        } catch (e) { /* storage unavailable */ }
+    };
+
+    resizer.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        dragging = true;
+        document.body.classList.add('resizing');
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    });
+
+    resizer.addEventListener('dblclick', () => {
+        root.style.removeProperty('--panel-width');
+        try { localStorage.removeItem(KEY); } catch (e) { /* storage unavailable */ }
     });
 }
 

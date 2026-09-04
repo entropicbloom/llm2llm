@@ -196,6 +196,7 @@ def generate_html(config: Config, storage: ConversationStorage, include_transcri
             <main id="main-content">
                 <!-- Content injected by JS -->
             </main>
+            <div id="panel-resizer" title="Drag to resize, double-click to reset"></div>
             <aside id="detail-panel" class="detail-panel">
                 <button class="panel-close">&times;</button>
                 <div id="panel-body"></div>
